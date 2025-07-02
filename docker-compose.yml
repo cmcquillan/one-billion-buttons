@@ -1,0 +1,51 @@
+version: "3.8"
+
+services:
+  app:
+    container_name: obb_app
+    build:
+      context: .
+      dockerfile: ./app/Dockerfile
+    ports:
+      - "8081:8080"
+    environment:
+      - PG_CONNECTION_STRING=host=database port=5432 sslmode=disable dbname=obb user=postgres password=pgpassword1
+    depends_on:
+      database:
+        condition: service_healthy
+  database:
+    container_name: obb_db
+    image: postgres:17-alpine
+    restart: always
+    user: postgres
+    hostname: database
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=pgpassword1
+      - POSTGRES_DB=obb
+      - POSTGRES_HOST=database
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - "postgres"
+  initdb:
+    container_name: obb_db_init
+    restart: on-failure:5
+    build:
+      context: .
+      dockerfile: ./makedb/Dockerfile
+    environment:
+      - GODEBUG=netdns=cgo+1
+      - PG_CONNECTION_STRING=host=database port=5432 sslmode=disable dbname=obb user=postgres password=pgpassword1
+    depends_on:
+      database:
+        condition: service_healthy
+
+volumes:
+  db-data: {}

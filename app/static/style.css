@@ -1,0 +1,183 @@
+:root {
+  --offset-x: 0px;
+  --offset-y: 0px;
+  --button-height: 36px;
+  --button-width: 124px;
+  --button-spacing-x: 24px;
+  --button-spacing-y: 36px;
+  --button-grid-count-x: 4096;
+  --button-per-grid-x: 10;
+  --button-grid-count-y: 2500;
+  --button-per-grid-y: 10;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+body {
+  --cursor-url: url("/cursor/fefefe/cursor.png");
+}
+
+body * {
+  cursor: var(--cursor-url), auto !important;
+}
+
+.debug {
+  position: sticky;
+  bottom: 0;
+  right: 0;
+  z-index: 10;
+  padding: 4px;
+  overflow-y: scroll;
+
+
+  height: 60px;
+  width: 450px;
+
+  background-color: rgba(0, 0, 255, 0.3);
+
+  font-family: "Open Sans", sans-serif;
+  text-wrap: wrap;
+  color: red;
+  font-size: 14px;
+  font-weight: bolder;
+}
+
+/* 
+#app {
+  cursor: var(--cursor-url), auto !important;
+}
+
+*:hover {
+  cursor: var(--cursor-url), auto !important;
+} */
+
+.app-grid {
+  position: relative;
+  min-width: calc(var(--button-width) * var(--button-grid-count-x) * var(--button-per-grid-x) * 1px);
+  min-height: calc(var(--button-height) * var(--button-grid-count-y) * var(--button-per-grid-y) * 1px);
+  width: 100vw;
+  height: 100vh;
+
+  overflow-y: hidden;
+  overflow-x: hidden;
+}
+
+.control-box {
+  position:sticky;
+  bottom: 0;
+
+  width: 100vw;
+
+  background-color: #9e9e9e;
+  border-top: 1px solid black;
+
+
+  z-index: 10;
+}
+
+.control-box.collapsed {
+  min-height: 8px;
+  height: 2vh;
+}
+
+.control-box.collapsed:hover {
+
+}
+
+.control-box:not(.collapsed) {
+  min-height: 120px;
+  height: 10vh;
+}
+
+.touch-bar {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+}
+
+.touch-bar label {
+  color: red;
+  font-size: smaller;
+}
+
+.button-box {
+  position: relative;
+  width: 125vw;
+  height: 125vh;
+  padding: 25vh 25vw;
+  overflow-y: hidden;
+  overflow-x: hidden;
+
+  text-wrap: nowrap;
+}
+
+.grid-container {
+  position: absolute;
+  display: grid;
+  row-gap: var(--button-spacing-y);
+  column-gap: var(--button-spacing-x);
+  grid-auto-flow: row;
+
+  padding-left: calc(var(--button-spacing-x) / 2);
+  padding-right: calc(var(--button-spacing-x) / 2);
+  padding-top: calc(var(--button-spacing-y) / 2);
+  padding-bottom: calc(var(--button-spacing-y) / 2);
+
+  border: 1px solid red;
+}
+
+.button {
+  height: var(--button-height);
+  width: var(--button-width);
+
+  font-family: "Open Sans", sans-serif;
+  font-size: 16px;
+  letter-spacing: 2px;
+  text-decoration: none;
+  text-transform: uppercase;
+  color: #000;
+  /* cursor: pointer; */
+  border: 3px solid;
+  padding: 0.25em 0.5em;
+  box-shadow: 1px 1px 0px 0px, 2px 2px 0px 0px, 3px 3px 0px 0px, 4px 4px 0px 0px, 5px 5px 0px 0px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+
+.button:not(.seen) {
+  opacity: 1;
+  animation-name: fadeInOpacity;
+  animation-iteration-count: 1;
+  animation-timing-function: ease-in;
+  animation-duration: 1.5s;
+}
+
+@keyframes fadeInOpacity {
+  0% {
+    opacity: 0;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+.button:active,
+.button.pressed {
+  box-shadow: 0px 0px 0px 0px;
+  top: 5px;
+  left: 5px;
+}
