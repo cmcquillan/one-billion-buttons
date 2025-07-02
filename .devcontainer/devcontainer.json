@@ -24,6 +24,13 @@
 	],
 	"containerEnv": {
 		"PG_CONNECTION_STRING": "user=postgres dbname=postgres host=127.0.0.1"
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"github.vscode-github-actions"
+			]
+		}
 	}
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "go version",
