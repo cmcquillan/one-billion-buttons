@@ -12,7 +12,8 @@ RUN GOOS=linux go build -o application
 
 # Copy static assets after
 # Lets us change them without affecting build cache
-COPY makedb/migrations/*.sql ./migrations
+COPY makedb/migrations/*.sql ./migrations/
+COPY makedb/reset/*.sql ./reset/
 
 EXPOSE 8080
 
