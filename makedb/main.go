@@ -41,19 +41,29 @@ func main() {
 
 	log.Print("pinging postgres success")
 
-	defer dbc.Close()
+	failure := false
 
-	switch verb {
-	case "create":
-		if errCreate := ExecDir(dbc, "./migrations"); errCreate != nil {
-			log.Printf("failed to execute db creation: %v", errCreate)
+	{
+		defer dbc.Close()
+
+		switch verb {
+		case "create":
+			if errCreate := ExecDir(dbc, "./migrations"); errCreate != nil {
+				log.Printf("failed to execute db creation: %v", errCreate)
+				failure = true
+			}
+		case "reset":
+			if errReset := ExecDir(dbc, "./reset"); errReset != nil {
+				log.Printf("failed to reset db: %v", errReset)
+				failure = true
+			}
+		default:
+			log.Printf("%v does not match a valid command", verb)
+			failure = true
 		}
-	case "reset":
-		if errReset := ExecDir(dbc, "./reset"); errReset != nil {
-			log.Printf("failed to reset db: %v", errReset)
-		}
-	default:
-		log.Printf("%v does not match a valid command", verb)
 	}
 
+	if !failure {
+		os.Exit(1)
+	}
 }
