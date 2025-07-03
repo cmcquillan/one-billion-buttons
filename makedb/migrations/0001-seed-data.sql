@@ -8,6 +8,7 @@ IF rowCount = 0 THEN
         INSERT INTO button (x_coord, y_coord)
         SELECT x, n.y
         FROM generate_series(1, 2500) AS n(y);
+        COMMIT;
     END LOOP;
 END IF;
 
