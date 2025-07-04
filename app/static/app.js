@@ -6,8 +6,13 @@ window.CSS.registerProperty({
     initialValue: 'url("/cursor/fefefe/cursor.png"',
 });
 
-function Api() {
-    async function getButtonsAtCoordinates(x, y) {
+class Api {
+    constructor() {
+        this.gets = {};
+        this.posts = {};
+    }
+
+    async _getButtonsAtCoordinates(x, y) {
         const resp = await fetch(`/api/${x}/${y}`);
         if (resp.status === 200) {
             const state = resp.json();
@@ -17,7 +22,7 @@ function Api() {
         return null;
     };
 
-    async function pressButton(x, y, id, hex) {
+    async _pressButton(x, y, id, hex) {
         id = parseInt(id);
 
         const resp = await fetch(`/api/${x}/${y}`, {
@@ -33,12 +38,10 @@ function Api() {
             }
 
             return data;
-        })
+        });
     };
 
-    this.gets = {};
-    this.posts = {};
-    this.getButtons = (x, y) => {
+    getButtons(x, y) {
         const key = `${x}_${y}`;
 
         const cache = this.gets[key];
@@ -46,7 +49,7 @@ function Api() {
             return cache;
         }
 
-        this.gets[key] = getButtonsAtCoordinates(x, y)
+        this.gets[key] = this._getButtonsAtCoordinates(x, y)
             .catch(e => {
                 this.gets[key] = null;
                 return e;
@@ -57,7 +60,8 @@ function Api() {
 
         return this.gets[key];
     };
-    this.pressButton = (x, y, id, hex) => {
+
+    pressButton(x, y, id, hex) {
         const key = `${x}_${y}`;
 
         const cache = this.posts[key];
@@ -65,7 +69,7 @@ function Api() {
             return cache;
         }
 
-        this.posts[key] = pressButton(x, y, id, hex)
+        this.posts[key] = this._pressButton(x, y, id, hex)
             .catch(e => {
                 this.posts[key] = null;
                 return e;
@@ -75,6 +79,134 @@ function Api() {
             });
         return this.posts[key];
     };
+}
+
+const dragReset = 'drag-reset';
+const dragStart = 'drag-start';
+const dragMove = 'drag-move';
+const dragEnd = 'drag-end';
+
+class PanelTracker {
+    constructor(window, changeCallback) {
+        this.posX = 0;
+        this.posY = 0;
+        this.dragging = false;
+        this.current = null;
+        this.changeCallback = changeCallback;
+        this.window = window;
+        this.trackedTouch = null;
+
+        this.window.document.addEventListener('mousemove', (e) => this._onMouseMove(e), false);
+        this.window.document.addEventListener('touchmove', (e) => this._onTouchMove(e), false);
+        this.window.document.addEventListener('mousedown', (e) => this._onMouseDown(e), false);
+        this.window.document.addEventListener('touchstart', (e) => this._onTouchStart(e), false);
+        this.window.document.addEventListener('mouseleave', (e) => this._onMouseUp(e), false);
+        this.window.document.addEventListener('touchcancel', (e) => this._onTouchEnd(e), false);
+        this.window.document.addEventListener('mouseup', (e) => this._onMouseUp(e), false);
+        this.window.document.addEventListener('touchend', (e) => this._onTouchEnd(e), false);
+        this.window.document.addEventListener('hashchange', (e) => this._onReset(e), false);
+        this.window.document.addEventListener('load', (e) => this._onReset(e), false);
+    }
+
+    _onReset(evt) {
+        this.posX = 0;
+        this.posY = 0;
+
+        this.changeCallback(this._createEvent({
+            type: dragReset,
+            event: evt,
+        }));
+    }
+
+    _onTouchStart(evt) {
+        // Ensure it's a one-finger touch
+        if (evt.touches && evt.touches.length === 1) {
+            this.trackedTouch = evt.touches[0];
+            this.dragging = true;
+
+            this.changeCallback(this._createEvent({
+                type: dragStart,
+                event: evt,
+            }));
+        }
+    }
+
+    _onTouchMove(evt) {
+        console.log('changed', evt);
+        if (evt.changedTouches && evt.changedTouches.length > 0) {
+            const changes = [...evt.changedTouches];
+            const newTouchState = changes.find((t) => t.identifier === this.trackedTouch.identifier);
+
+            const changeX = this.trackedTouch.clientX - newTouchState.clientX;
+            const changeY = this.trackedTouch.clientY - newTouchState.clientY;
+
+            this.posX += changeX;
+            this.posY += changeY;
+            this.trackedTouch = newTouchState;
+
+            this.changeCallback(this._createEvent({
+                type: dragMove,
+                event: evt,
+                movementX: changeX,
+                movementY: changeY,
+            }));
+        }
+    }
+
+    _onTouchEnd(evt) {
+        this.trackedTouch = null;
+        this.dragging = false;
+
+        this.changeCallback(this._createEvent({
+            type: dragEnd,
+            event: evt,
+        }));
+    }
+
+    _createEvent(opts) {
+        return {
+            type: null,
+            event: null,
+            movementX: 0,
+            movementY: 0,
+            dragging: this.dragging,
+            posX: this.posX,
+            posY: this.posY,
+            ...opts
+        };
+    }
+
+    _onMouseDown(evt) {
+        this.dragging = true;
+
+        this.changeCallback(this._createEvent({
+            type: dragStart,
+            event: evt,
+        }));
+    }
+
+    _onMouseMove(evt) {
+        if (this.dragging) {
+            this.posX -= evt.movementX;
+            this.posY -= evt.movementY;
+
+            this.changeCallback(this._createEvent({
+                type: dragMove,
+                event: evt,
+                movementX: evt.movementX,
+                movementY: evt.movementY,
+            }));
+        }
+    }
+
+    _onMouseUp(evt) {
+        this.dragging = false;
+
+        this.changeCallback(this._createEvent({
+            type: dragEnd,
+            event: evt,
+        }));
+    }
 }
 
 /* HELPER FUNCTIONS */
@@ -193,6 +325,9 @@ async function handleButtonClick(w, s, button) {
     const point = getGridPoint(button);
     const id = /[0-9]+/.exec(button.id)[0];
 
+    button.classList.remove('pressed');
+    button.classList.add('pressed');
+
     const buttonState = await s.api.pressButton(point.x, point.y, id, s.hexCode);
 
     if (buttonState.success) {
@@ -209,10 +344,6 @@ function getGridPoint(element) {
     const x = parseInt(element.getAttribute('data-x'));
     const y = parseInt(element.getAttribute('data-y'));
     return { x, y };
-}
-
-async function renderLoop(w, s) {
-
 }
 
 async function eventLoop(w, s) {
@@ -353,54 +484,66 @@ async function startApplication(w, s) {
     s.interval = w.setInterval(async () => fixStates(w, s), 100);
 }
 
-function startDrag(evt, s) {
-    // We're targeting a button so ignore this.
-    if (evt.target.localName === 'button') {
+
+function handleTouch(evt, w) {
+    // Just one finger, please.
+    if (evt.touches && evt.touches.length > 1) {
+        console.log('nope');
+
         return;
     }
 
-    let check = evt.target;
+    let touches = evt.changedTouches;
+    let firstTouch = touches[0];
+    let type = '';
 
-    while (check) {
-        if (check.classList.contains('control-box')) {
+    switch (evt.type) {
+        case 'touchstart':
+            type = 'mousedown';
+            break;
+        case 'touchmove':
+            type = 'mousemove';
+            break;
+        case 'touchend':
+        case 'touchcancel':
+            type = 'mouseup';
+        default:
             return;
-        }
-
-        check = check.parentElement;
     }
 
-    s.dragging = true;
+    let newEvt = new MouseEvent(type, {
+        button: 0,
+        clientX: firstTouch.clientX,
+        clientY: firstTouch.clientY,
+        // movementX: number,
+        // movementY: number,
+        relatedTarget: firstTouch.target,
+        screenX: firstTouch.screenX,
+        screenY: firstTouch.screenY,
+        bubbles: true,
+        cancelable: true,
+        detail: 1,
+        view: w,
+        metaKey: false,
+        shiftKey: false,
+        altKey: false,
+    });
+
+    // newEvt.initMouseEvent()
+    window.dispatchEvent(newEvt);
 }
 
-function stopDrag(evt, s) {
-    s.dragging = false;
-}
-
-async function windowMove(evt, s) {
-    evt.preventDefault();
-
-    if (!s.dragging) {
-        return;
+async function onPanelStateChange(w, s, data) {
+    if (data.dragging && s.appDiv) {
+        s.isScrollDirty = true;
+        s.appDiv.style.setProperty('--offset-x', `${-data.posX}px`);
+        s.appDiv.style.setProperty('--offset-y', `${-data.posY}px`);
     }
 
-    // Keep posX, posY convenient and invert in css.
-    s.posX += -evt.movementX;
-    s.posY += -evt.movementY;
-
-    if (s.appDiv) {
-        s.appDiv.style.setProperty('--offset-x', `${-s.posX}px`);
-        s.appDiv.style.setProperty('--offset-y', `${-s.posY}px`);
-    }
-
-    s.isScrollDirty = true;
-
-    await eventLoop(window, s);
+    await eventLoop(w, s);
 }
 
 window.state = window.state || {
-    dragging: false,
-    posX: 0,
-    posY: 0,
     gridX: null,
     gridY: null,
     gridSizeX: null,
@@ -414,27 +557,18 @@ window.state = window.state || {
     interval: null,
     observer: null,
     api: new Api(),
+    panelTracker: null,
 
     // User
     hexCode: generateRandomHex(),
 };
 
-window.addEventListener('load', function () { startApplication(window, state); });
-window.addEventListener('hashchange', function () {
-    state.posX = 0;
-    state.posY = 0;
+window.state.panelTracker = new PanelTracker(window, (data) => onPanelStateChange(window, state, data)),
 
-    if (state.appDiv) {
-        state.appDiv.style.setProperty('--offset-x', `${-state.posX}px`);
-        state.appDiv.style.setProperty('--offset-y', `${-state.posY}px`);
-    }
+    window.addEventListener('load', function () { startApplication(window, state); });
+window.addEventListener('hashchange', function () {
     startApplication(window, state);
 });
-
-window.document.addEventListener('mousemove', async (evt) => await windowMove(evt, state), false);
-window.document.addEventListener('mousedown', (evt) => startDrag(evt, state), false);
-window.document.addEventListener('mouseleave', (evt) => stopDrag(evt, state), false);
-window.document.addEventListener('mouseup', (evt) => stopDrag(evt, state), false);
 
 window.keys = window.keys || { ctrl: false };
 
