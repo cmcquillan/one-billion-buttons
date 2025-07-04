@@ -2,6 +2,10 @@
 <html>
 
 <head>
+    <title>Approximately 1 billion buttons</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Hedvig+Letters+Sans&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/style.css" />
     <script src="/app.js"></script>
 </head>
@@ -11,16 +15,30 @@
         <div id="button-box" class="button-box">
         </div>
         <div id="control-box" class="control-box collapsed">
+            <input id="touch-bar-control" class="touch-bar-control" type="checkbox" name="touch-bar-control" />
+            <label class="touch-bar-control" for="touch-bar-control">
+                <svg class="touch-bar-icon" fill="#ffffff" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg"
+                    xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 455 455" xml:space="preserve">
+                    <path
+                        d="M227.5,0C101.855,0,0,101.855,0,227.5S101.855,455,227.5,455S455,353.145,455,227.5S353.145,0,227.5,0z M227.5,327.148 L99.411,199.476l21.178-21.248L227.5,284.791l106.911-106.563l21.178,21.248L227.5,327.148z" />
+                </svg>
+            </label>
+            <hr />
             <div class="touch-bar">
-                <label for="touch-bar-control">
-                    —————————————————————————————————————————————————————————————————————————————————
-                </label>
-                <input type="checkbox" name="touch-bar-control" checked />
+                <div class="touch-bar-color">
+                    <label for="color-select">Button Color</label>
+                    <input id="color-select" value="#fefefe" type="color" />
+                </div>
+                <div class="touch-bar-wat">&nbsp;</div>
+                <div class="touch-bar-wat">
+                    &nbsp;
+                </div>
             </div>
         </div>
     </div>
     <div id="debug" class="debug" style="display: none;">
-        <div id="data" class="debug-data">
+        <div id="data" class="debug-data" oninput="(evt) => updateColor(evt, window, window.state);"
+            onchange="(evt) => updateColor(evt, window, window.state);">
         </div>
     </div>
 

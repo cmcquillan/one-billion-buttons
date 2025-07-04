@@ -3,7 +3,7 @@
 window.CSS.registerProperty({
     name: '--cursor-url',
     inherits: true,
-    initialValue: 'url("/cursor/${s.hexCode}/cursor.png"',
+    initialValue: 'url("/cursor/fefefe/cursor.png"',
 });
 
 function Api() {
@@ -245,7 +245,7 @@ async function eventLoop(w, s) {
         debugDataDiv.innerHTML = inView.map((val) => val.innerText).join(',');
     }
 
-    updateDocumentCursor(s, w);
+    updateDocumentCursor(w, s);
 
     if (s.isScrollDirty) {
         const checkBounds = [
@@ -293,13 +293,22 @@ async function eventLoop(w, s) {
     }
 }
 
-function updateDocumentCursor(s, w) {
+function updateDocumentCursor(w, s) {
+    const colorSelect = w.document.getElementById('color-select');
+
+    if (colorSelect && colorSelect.value) {
+        s.hexCode = colorSelect.value.substring(1);
+    }
+
     const cursor = `url("/cursor/${s.hexCode}/cursor.png")`;
-    const cursorProp = w.document.body.style.getPropertyValue('--cursor-url');
+    const cursorProp = s.appDiv.style.getPropertyValue('--cursor-url');
     if (cursorProp !== cursor) {
-        console.log('Changing document crsor url', cursor);
         w.document.body.style.setProperty('--cursor-url', cursor);
     }
+}
+
+async function fixStates(w, s) {
+    updateDocumentCursor(w, s);
 }
 
 async function startApplication(w, s) {
@@ -317,8 +326,6 @@ async function startApplication(w, s) {
     // We reset ALL state here
     s.buttonContainer = document.getElementById('button-box');
     s.buttonContainer.innerHTML = '';
-    updateDocumentCursor(s, w);
-
 
     s.observer = new IntersectionObserver((entries) => {
         entries.forEach((val) => {
@@ -339,6 +346,12 @@ async function startApplication(w, s) {
     s.gridSizeX = centerDiv.clientWidth;
     s.gridSizeY = centerDiv.clientHeight;
     s.isScrollDirty = true;
+
+    /* Set some control initial states */
+    w.document.getElementById('color-select').value = `#${s.hexCode}`;
+
+    /* Some browsers are just still terrible */
+    s.interval = w.setInterval(async () => fixStates(w, s), 100);
 }
 
 function startDrag(evt, s) {
@@ -349,9 +362,8 @@ function startDrag(evt, s) {
 
     let check = evt.target;
 
-    while(check) {
-        if(check.classList.contains('control-box')) {
-            console.log('found you');
+    while (check) {
+        if (check.classList.contains('control-box')) {
             return;
         }
 
@@ -412,8 +424,11 @@ window.addEventListener('load', function () { startApplication(window, state); }
 window.addEventListener('hashchange', function () {
     state.posX = 0;
     state.posY = 0;
-    state.appDiv.style.setProperty('--offset-x', `${-state.posX}px`);
-    state.appDiv.style.setProperty('--offset-y', `${-state.posY}px`);
+
+    if (state.appDiv) {
+        state.appDiv.style.setProperty('--offset-x', `${-state.posX}px`);
+        state.appDiv.style.setProperty('--offset-y', `${-state.posY}px`);
+    }
     startApplication(window, state);
 });
 
@@ -426,6 +441,9 @@ window.keys = window.keys || { ctrl: false };
 
 window.document.addEventListener('keydown', (evt) => {
     if (evt.ctrlKey && evt.key.toLowerCase() === 'b') {
+        const appDiv = window.document.getElementById('app');
+        appDiv.classList.toggle('app-debug');
+
         const debugDiv = window.document.getElementById('debug');
 
         debugDiv.style.display = debugDiv.style.display === 'none'
