@@ -63,7 +63,7 @@ func main() {
 		}
 	}
 
-	if !failure {
+	if failure {
 		os.Exit(1)
 	}
 }
