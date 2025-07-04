@@ -3,8 +3,10 @@
   --offset-y: 0px;
   --button-height: 36px;
   --button-width: 124px;
-  --button-spacing-x: 24px;
-  --button-spacing-y: 36px;
+  /* --button-spacing-x: 24px;
+  --button-spacing-y: 36px; */
+  --button-spacing-x: 4vw;
+  --button-spacing-y: 3vh;
   --button-grid-count-x: 4096;
   --button-per-grid-x: 10;
   --button-grid-count-y: 2500;

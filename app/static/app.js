@@ -132,7 +132,6 @@ class PanelTracker {
     }
 
     _onTouchMove(evt) {
-        console.log('changed', evt);
         if (evt.changedTouches && evt.changedTouches.length > 0) {
             const changes = [...evt.changedTouches];
             const newTouchState = changes.find((t) => t.identifier === this.trackedTouch.identifier);
@@ -389,8 +388,16 @@ async function eventLoop(w, s) {
             { coord: [w.innerWidth / 2, w.innerHeight - 1], vec: [0, 1] }, // Bottom Middle
         ];
 
-        const center = w.document.elementsFromPoint(w.innerWidth / 2, w.innerHeight / 2)
-            .find((d) => d.classList.contains('grid-container'));
+        let center = null;
+        let tries = 0;
+
+        while(!center && tries++ < 10)
+        {
+            const tryX = (Math.random() * 100000) % w.innerWidth;
+            const tryY = (Math.random() * 100000) % w.innerHeight;
+            center = w.document.elementsFromPoint(tryX, tryY)
+                .find((d) => d.classList.contains('grid-container'));
+        }
 
         if (!center) {
             console.log('fuck...');
@@ -465,7 +472,6 @@ async function startApplication(w, s) {
                     val.target.innerHTML = '';
                 }
             }
-
         });
     }, {
         root: w.document.getElementById('button-box')
@@ -482,55 +488,8 @@ async function startApplication(w, s) {
 
     /* Some browsers are just still terrible */
     s.interval = w.setInterval(async () => fixStates(w, s), 100);
-}
 
-
-function handleTouch(evt, w) {
-    // Just one finger, please.
-    if (evt.touches && evt.touches.length > 1) {
-        console.log('nope');
-
-        return;
-    }
-
-    let touches = evt.changedTouches;
-    let firstTouch = touches[0];
-    let type = '';
-
-    switch (evt.type) {
-        case 'touchstart':
-            type = 'mousedown';
-            break;
-        case 'touchmove':
-            type = 'mousemove';
-            break;
-        case 'touchend':
-        case 'touchcancel':
-            type = 'mouseup';
-        default:
-            return;
-    }
-
-    let newEvt = new MouseEvent(type, {
-        button: 0,
-        clientX: firstTouch.clientX,
-        clientY: firstTouch.clientY,
-        // movementX: number,
-        // movementY: number,
-        relatedTarget: firstTouch.target,
-        screenX: firstTouch.screenX,
-        screenY: firstTouch.screenY,
-        bubbles: true,
-        cancelable: true,
-        detail: 1,
-        view: w,
-        metaKey: false,
-        shiftKey: false,
-        altKey: false,
-    });
-
-    // newEvt.initMouseEvent()
-    window.dispatchEvent(newEvt);
+    await eventLoop(w, s);
 }
 
 async function onPanelStateChange(w, s, data) {
