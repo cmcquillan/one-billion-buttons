@@ -133,7 +133,6 @@ function renderButtons(w, s, buttonState) {
 
             const x = i % rowLength;
             const y = Math.floor(i / rowLength);
-            button.innerText = buttonState.buttons[i].id;
             button.classList.add('button');
 
             if (buttonState.seen) {
