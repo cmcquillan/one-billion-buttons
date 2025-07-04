@@ -1,0 +1,46 @@
+resource "digitalocean_app" "obb_webapp" {
+  spec {
+    name   = "obb-webapp"
+    region = "nyc"
+
+    env {
+      key   = "PG_CONNECTION_STRING"
+      value = "host=${digitalocean_database_cluster.primary_db.host} port=${digitalocean_database_cluster.primary_db.port} dbname=${digitalocean_database_db.primary_db.name} user=${digitalocean_database_cluster.primary_db.user} password=${digitalocean_database_cluster.primary_db.password}"
+      scope = "RUN_TIME"
+      type  = "SECRET"
+    }
+
+    service {
+      name               = "api"
+      instance_count     = 1
+      instance_size_slug = "basic-xxs"
+
+      github {
+        repo   = "cmcquillan/one-billion-buttons"
+        branch = "main"
+      }
+
+      dockerfile_path = "app/Dockerfile"
+      http_port       = "8080"
+    }
+
+    job {
+      name               = "makedb"
+      kind               = "PRE_DEPLOY"
+      instance_count     = 1
+      instance_size_slug = "apps-s-1vcpu-0.5gb"
+      dockerfile_path    = "makedb/Dockerfile"
+
+      github {
+        repo   = "cmcquillan/one-billion-buttons"
+        branch = "main"
+      }
+    }
+  }
+
+  depends_on = [
+    digitalocean_database_cluster.primary_db,
+    digitalocean_database_db.primary_db,
+    digitalocean_database_user.primary_db_user,
+  ]
+}
