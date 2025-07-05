@@ -1,0 +1,20 @@
+name: Trigger Deploy on Release
+
+on:
+  release:
+    types: [released]
+
+jobs:
+  deploy:
+
+    runs-on: ubuntu-latest
+
+    environment: Production
+
+    steps:
+      - name: Install doctl
+        uses: digitalocean/action-doctl@v2
+        with:
+          token: ${{ secrets.DO_TOKEN }}
+      - name: Deploy Latest Application
+        run: doctl app create-deployment ${{ vars.DO_APP_ID }}
