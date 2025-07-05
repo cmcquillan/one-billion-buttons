@@ -391,8 +391,7 @@ async function eventLoop(w, s) {
         let center = null;
         let tries = 0;
 
-        while(!center && tries++ < 10)
-        {
+        while (!center && tries++ < 10) {
             const tryX = (Math.random() * 100000) % w.innerWidth;
             const tryY = (Math.random() * 100000) % w.innerHeight;
             center = w.document.elementsFromPoint(tryX, tryY)
@@ -406,6 +405,7 @@ async function eventLoop(w, s) {
             const gridPoint = getGridPoint(center);
             const gridX = gridPoint.x;
             const gridY = gridPoint.y;
+            let rendered = false;
 
             for (let j = 0; j < checkBounds.length; j++) {
                 const [x, y] = checkBounds[j].coord;
@@ -489,7 +489,8 @@ async function startApplication(w, s) {
     /* Some browsers are just still terrible */
     s.interval = w.setInterval(async () => fixStates(w, s), 100);
 
-    await eventLoop(w, s);
+    /* Bad way to eal with screen proportions, find something better */
+    s.eventInterval = w.setInterval(async () => await eventLoop(w, s,), 1000);
 }
 
 async function onPanelStateChange(w, s, data) {
@@ -514,6 +515,7 @@ window.state = window.state || {
     buttonStates: {},
 
     interval: null,
+    eventInterval: null,
     observer: null,
     api: new Api(),
     panelTracker: null,

@@ -3,14 +3,15 @@
   --offset-y: 0px;
   --button-height: 36px;
   --button-width: 124px;
-  /* --button-spacing-x: 24px;
-  --button-spacing-y: 36px; */
-  --button-spacing-x: 4vw;
-  --button-spacing-y: 3vh;
+  --button-spacing-x: 24px;
+  --button-spacing-y: 36px;
   --button-grid-count-x: 4096;
   --button-per-grid-x: 10;
   --button-grid-count-y: 2500;
   --button-per-grid-y: 10;
+
+  --touch-bar-min: 5vh;
+  --touch-bar-max: 24vh;
 }
 
 *,
@@ -66,9 +67,10 @@ body * {
 .control-box {
   position: sticky;
   bottom: 0;
+  left: 0;
 
   width: 100vw;
-  min-height: 12px;
+  min-height: var(--touch-bar-min);
 
   display: flex;
   flex-direction: column;
@@ -93,7 +95,7 @@ input.touch-bar-control {
 }
 
 input.touch-bar-control:checked~.touch-bar {
-  height: 6rem;
+  height: var(--touch-bar-max);
 }
 
 input.touch-bar-control:not(:checked)~.touch-bar {
@@ -105,14 +107,14 @@ input.touch-bar-control:not(:checked)~label svg {
 }
 
 .touch-bar-icon {
-  height: 12px;
-  width: 12px;
+  margin-top: 0.5rem;
+  height: calc(var(--touch-bar-min) - 1rem);
 }
 
 label.touch-bar-control {
   width: 100%;
-  height: 1rem;
-  line-height: 1rem;
+  height: var(--touch-bar-min);
+  line-height: var(--touch-bar-min);
   text-align: center;
 
   box-shadow: inset 3px 3px 5px 5px #9e9c9c;
