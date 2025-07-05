@@ -43,4 +43,11 @@ resource "digitalocean_app" "obb_webapp" {
     digitalocean_database_db.primary_db,
     digitalocean_database_user.primary_db_user,
   ]
+
+  lifecycle {
+    ignore_changes = [ 
+      spec[0].env
+     ]
+     prevent_destroy = true
+  }
 }
