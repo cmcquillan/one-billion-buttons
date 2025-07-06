@@ -452,7 +452,10 @@ async function startApplication(w, s) {
     const hash = parseHash(w.location.hash);
 
     if (!hash || !hash.x || !hash.y) {
-        w.location.hash = '#1,1';
+        const toX = Math.ceil((Math.random() * 1000000) % s.gridMaxX);
+        const toY = Math.ceil((Math.random() * 1000000) % s.gridMaxY);
+        
+        w.location.hash = `#${toX},${toY}`;
         return;
     }
 
@@ -503,11 +506,16 @@ async function onPanelStateChange(w, s, data) {
     await eventLoop(w, s);
 }
 
+const root = window.getComputedStyle(document.documentElement);
+
 window.state = window.state || {
+    root: root,
     gridX: null,
     gridY: null,
     gridSizeX: null,
     gridSizeY: null,
+    gridMaxX: parseInt(root.getPropertyValue('--button-grid-count-x')),
+    gridMaxY: parseInt(root.getPropertyValue('--button-grid-count-y')),
     buttonPageSize: 100,
     appDiv: null,
     buttonContainer: null,
