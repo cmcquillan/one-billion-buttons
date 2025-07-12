@@ -128,26 +128,6 @@ label.touch-bar-control:hover {
   border: 1px solid black;
 }
 
-@keyframes shrinkTouchBar {
-  0% {
-    height: 120px;
-  }
-
-  100% {
-    height: 0px;
-  }
-}
-
-@keyframes growTouchBar {
-  0% {
-    height: 0px;
-  }
-
-  100% {
-    height: 120px;
-  }
-}
-
 .touch-bar {
   display: grid;
   grid-template-columns: max-content 1fr max-content;
