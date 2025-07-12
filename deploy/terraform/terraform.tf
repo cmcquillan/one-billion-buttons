@@ -2,7 +2,7 @@ terraform {
   required_providers {
     digitalocean = {
       source  = "digitalocean/digitalocean"
-      version = "2.58.0"
+      version = "2.59.0"
     }
     github = {
       source  = "integrations/github"
@@ -13,3 +13,6 @@ terraform {
   required_version = ">= 1.12"
 }
 
+provider "digitalocean" {
+  token = var.DigitalOceanToken
+}

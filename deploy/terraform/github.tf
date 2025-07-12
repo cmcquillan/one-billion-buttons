@@ -7,7 +7,7 @@ import {
 resource "github_repository" "obb_repo" {
   name        = "one-billion-buttons"
   description = "Approximately one billion buttons"
-  visibility  = "private"
+  visibility  = "public"
 }
 
 resource "github_repository_environment" "obb_prod" {
