@@ -88,6 +88,7 @@ const dragEnd = 'drag-end';
 
 class PanelTracker {
     constructor(window, changeCallback) {
+        this.touchBuffer = 0;
         this.posX = 0;
         this.posY = 0;
         this.dragging = false;
@@ -132,15 +133,14 @@ class PanelTracker {
     }
 
     _onTouchMove(evt) {
-        if (evt.changedTouches && evt.changedTouches.length > 0) {
+        this.touchBuffer++;
+
+        if (evt.changedTouches && evt.changedTouches.length > 0 && this.touchBuffer > 5) {
+            this.touchBuffer = 0;
             const changes = [...evt.changedTouches];
             const newTouchState = changes.find((t) => t.identifier === this.trackedTouch.identifier);
 
-            const changeX = this.trackedTouch.clientX - newTouchState.clientX;
-            const changeY = this.trackedTouch.clientY - newTouchState.clientY;
-
-            this.posX += changeX;
-            this.posY += changeY;
+            const { changeX, changeY } = this._updatePositionFromTouch(newTouchState);
             this.trackedTouch = newTouchState;
 
             this.changeCallback(this._createEvent({
@@ -152,7 +152,25 @@ class PanelTracker {
         }
     }
 
+    _updatePositionFromTouch(newTouchState) {
+        const changeX = this.trackedTouch.clientX - newTouchState.clientX;
+        const changeY = this.trackedTouch.clientY - newTouchState.clientY;
+
+        this.posX += changeX;
+        this.posY += changeY;
+        return { changeX, changeY };
+    }
+
     _onTouchEnd(evt) {
+        // Fire one last move event
+        const { changeX, changeY } = this._updatePositionFromTouch(this.trackedTouch);
+        this.changeCallback(this._createEvent({
+            type: dragMove,
+            event: evt,
+            movementX: changeX,
+            movementY: changeY,
+        }));
+
         this.trackedTouch = null;
         this.dragging = false;
 
@@ -454,7 +472,7 @@ async function startApplication(w, s) {
     if (!hash || !hash.x || !hash.y) {
         const toX = Math.ceil((Math.random() * 1000000) % s.gridMaxX);
         const toY = Math.ceil((Math.random() * 1000000) % s.gridMaxY);
-        
+
         w.location.hash = `#${toX},${toY}`;
         return;
     }
