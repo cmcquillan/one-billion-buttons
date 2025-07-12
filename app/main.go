@@ -33,12 +33,17 @@ func main() {
 
 	router := gin.Default()
 
+	router.ForwardedByClientIP = true
+	router.SetTrustedProxies(nil)
+
 	buttonApi := ButtonApi{Database: db}
 	cursorApi := CursorApi{}
 
 	router.POST("/api/:x/:y", buttonApi.HandlePostButton)
 
 	router.GET("/api/:x/:y", buttonApi.HandleGetButtonPage)
+
+	router.GET("/api/:x/:y/:hash", buttonApi.HandleGetButtonPage)
 
 	router.GET("/cursor/:hex/cursor.png", cursorApi.GetCursor)
 
