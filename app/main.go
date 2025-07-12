@@ -33,6 +33,7 @@ func main() {
 
 	router := gin.Default()
 
+	router.UseH2C = true
 	router.ForwardedByClientIP = true
 	router.SetTrustedProxies(nil)
 
@@ -51,7 +52,21 @@ func main() {
 		ctx.Status(http.StatusOK)
 	})
 
-	router.StaticFile("/", "./static/index.html")
+	router.GET("/", func(c *gin.Context) {
+		if pusher := c.Writer.Pusher(); pusher != nil {
+			if err := pusher.Push("/app.js", nil); err != nil {
+				log.Printf("Failed on js server push: %v", err)
+			}
+
+			if err := pusher.Push("/style.css", nil); err != nil {
+				log.Printf("Failed on css server push: %v", err)
+			}
+		}
+
+		c.Status(http.StatusOK)
+		c.File("./static/index.html")
+	})
+	//router.StaticFile("/", "./static/index.html")
 	router.StaticFile("/app.js", "./static/app.js")
 	router.StaticFile("/style.css", "./static/style.css")
 
