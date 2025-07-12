@@ -248,13 +248,20 @@ function parseHash(hash) {
     }
 }
 
+function isInViewport(s, elem) {
+    const container = s.appDiv.getBoundingClientRect();
+    const rect = elem.getBoundingClientRect();
 
+    return (
+        rect.top < container.height + 10 &&
+        rect.bottom > -10 &&
+        rect.left < container.width + 10 &&
+        rect.right > -10
+    );
+}
 
-function renderButtons(w, s, buttonState) {
-    const buttonCount = buttonState.buttons.length;
-    const rowLength = Math.sqrt(buttonCount);
-    const gridX = buttonState.x;
-    const gridY = buttonState.y;
+function createGridElement(w, s, gridX, gridY) {
+    const rowLength = Math.sqrt(s.buttonPageSize);
 
     const gridXOffset = (gridX - s.gridX) * s.gridSizeX;
     const gridYOffset = (gridY - s.gridY) * s.gridSizeY;
@@ -268,10 +275,28 @@ function renderButtons(w, s, buttonState) {
         div.classList.add('grid-container');
         div.style.top = `calc(${(gridYOffset)}px + var(--offset-y))`;
         div.style.left = `calc(${(gridXOffset)}px + var(--offset-x))`;
+        
+        if(s.gridSizeX && s.gridSizeY) {
+            div.style.height = `${s.gridSizeY}px`;
+            div.style.width = `${s.gridSizeX}px`;
+        }
+        
         div.setAttribute('data-x', gridX.toString());
         div.setAttribute('data-y', gridY.toString());
         div.style['grid-template-columns'] = `repeat(${rowLength}, auto)`;
+        s.buttonContainer.appendChild(div);
+        s.observer.observe(div);
     }
+
+    return div;
+}
+
+function renderButtons(w, s, buttonState) {
+    const buttonCount = buttonState.buttons.length;
+    const gridX = buttonState.x;
+    const gridY = buttonState.y;
+
+    const div = createGridElement(w, s, gridX, gridY);
 
     for (let i = 0; i < buttonCount; i++) {
         const id = `b${buttonState.buttons[i].id}`;
@@ -279,9 +304,6 @@ function renderButtons(w, s, buttonState) {
 
         if (!button) {
             button = w.document.createElement('button');
-
-            const x = i % rowLength;
-            const y = Math.floor(i / rowLength);
             button.classList.add('button');
 
             if (buttonState.seen) {
@@ -305,10 +327,10 @@ function renderButtons(w, s, buttonState) {
         }
     }
 
-    if (!div.parentElement) {
-        s.buttonContainer.appendChild(div);
-        s.observer.observe(div);
-    }
+    // if (!div.parentElement) {
+    //     s.buttonContainer.appendChild(div);
+    //     s.observer.observe(div);
+    // }
 
     buttonState.seen = true;
 
@@ -395,55 +417,28 @@ async function eventLoop(w, s) {
     updateDocumentCursor(w, s);
 
     if (s.isScrollDirty) {
-        const checkBounds = [
-            { coord: [1, 1], vec: [-1, -1] }, // Top left 
-            { coord: [1, w.innerHeight / 2], vec: [-1, 0] }, // Middle Left
-            { coord: [1, w.innerHeight - 1], vec: [-1, 1] }, // Bottom Left
-            { coord: [w.innerWidth / 2, 1], vec: [0, -1] }, // Top Middle
-            { coord: [w.innerWidth - 1, 1], vec: [1, -1] }, // Top Right
-            { coord: [w.innerWidth - 1, w.innerHeight / 2], vec: [1, 0] }, // Middle Right
-            { coord: [w.innerWidth - 1, w.innerHeight - 1], vec: [1, 1] }, // Bottom Right
-            { coord: [w.innerWidth / 2, w.innerHeight - 1], vec: [0, 1] }, // Bottom Middle
-        ];
+        // Get all .grid-container elements that are visible
+        // Schedule render of all their buttons
+        // Render .grid-container at boundaries
+        // Repeat (next event loop)
+        // Set isScrollDirty = false when all visibles have buttons renders.
 
-        let center = null;
-        let tries = 0;
+        const list = [...w.document.querySelectorAll('.grid-container')];
+        const visisble = list.filter(elem => isInViewport(s, elem));
 
-        while (!center && tries++ < 10) {
-            const tryX = (Math.random() * 100000) % w.innerWidth;
-            const tryY = (Math.random() * 100000) % w.innerHeight;
-            center = w.document.elementsFromPoint(tryX, tryY)
-                .find((d) => d.classList.contains('grid-container'));
-        }
-
-        if (!center) {
-            console.log('fuck...');
-        } else {
-
-            const gridPoint = getGridPoint(center);
-            const gridX = gridPoint.x;
-            const gridY = gridPoint.y;
-            let rendered = false;
-
-            for (let j = 0; j < checkBounds.length; j++) {
-                const [x, y] = checkBounds[j].coord;
-                const elems = w.document.elementsFromPoint(x, y);
-                const elem = elems.find((d) => d.classList.contains('grid-container'));
-
-                if (!elem) {
-
-                    if (!gridX || !gridY || isNaN(gridX) || isNaN(gridY) || gridX < 1 || gridY < 1) {
-                        continue;
-                    }
-                    const [dX, dY] = checkBounds[j].vec;
-                    const renderGridX = gridX + dX;
-                    const renderGridY = gridY + dY;
-
-                    await renderGridPoint(w, s, renderGridX, renderGridY);
-                }
-            }
-
+        if (visisble.length === 0) {
             s.isScrollDirty = false;
+        } else {
+            await Promise.all(visisble.map(async (elem) => {
+                const { x, y } = getGridPoint(elem);
+                await renderGridPoint(w, s, x, y);
+
+                for (let xp = x - 1; xp <= x + 1; xp++) {
+                    for (let yp = y - 1; yp <= y + 1; yp++) {
+                        createGridElement(w, s, xp, yp);
+                    }
+                }
+            }));
         }
     }
 }
@@ -548,6 +543,8 @@ window.state = window.state || {
 
     // User
     hexCode: generateRandomHex(),
+
+    debug: false,
 };
 
 window.state.panelTracker = new PanelTracker(window, (data) => onPanelStateChange(window, state, data)),
@@ -566,7 +563,9 @@ window.document.addEventListener('keydown', (evt) => {
 
         const debugDiv = window.document.getElementById('debug');
 
-        debugDiv.style.display = debugDiv.style.display === 'none'
+        state.debug = !state.debug;
+
+        debugDiv.style.display = state.debug
             ? 'block'
             : 'none';
     }
