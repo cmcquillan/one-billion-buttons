@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
@@ -40,6 +41,10 @@ func main() {
 	router.GET("/api/:x/:y", buttonApi.HandleGetButtonPage)
 
 	router.GET("/cursor/:hex/cursor.png", cursorApi.GetCursor)
+
+	router.GET("/healthcheck/live", func(ctx *gin.Context) {
+		ctx.Status(http.StatusOK)
+	})
 
 	router.StaticFile("/", "./static/index.html")
 	router.StaticFile("/app.js", "./static/app.js")
