@@ -22,6 +22,14 @@ resource "digitalocean_app" "obb_webapp" {
 
       dockerfile_path = "app/Dockerfile"
       http_port       = "8080"
+
+      health_check {
+        http_path             = "/healthcheck/live"
+        port                  = 8080
+        initial_delay_seconds = 10
+        period_seconds        = 10
+        timeout_seconds       = 10
+      }
     }
 
     job {
@@ -45,9 +53,9 @@ resource "digitalocean_app" "obb_webapp" {
   ]
 
   lifecycle {
-    ignore_changes = [ 
+    ignore_changes = [
       spec[0].env
-     ]
-     prevent_destroy = true
+    ]
+    prevent_destroy = true
   }
 }
