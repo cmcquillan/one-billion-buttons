@@ -1,5 +1,24 @@
 /* GLOBAL BOOTSTRAPPING */
 
+/**
+ * @typedef GridPoint
+ * @property {number} x
+ * @property {number} y
+ */
+
+/**
+ * @typedef ButtonState
+ * @property {number} id
+ * @property {string?} hex
+ */
+
+/**
+ * @typedef GridState 
+ * @implements {GridPoint}
+ * @property {ButtonState[]} buttons
+ * @property {string?} next
+ */
+
 window.CSS.registerProperty({
     name: '--cursor-url',
     inherits: true,
@@ -61,6 +80,14 @@ class Api {
         return this.gets[key];
     };
 
+    /**
+     * 
+     * @param {number} x 
+     * @param {number} y 
+     * @param {string} id 
+     * @param {string} hex 
+     * @returns {GridState}
+     */
     pressButton(x, y, id, hex) {
         const key = `${x}_${y}`;
 
@@ -87,6 +114,11 @@ const dragMove = 'drag-move';
 const dragEnd = 'drag-end';
 
 class PanelTracker {
+    /**
+     * 
+     * @param {Window} window 
+     * @param {Function} changeCallback 
+     */
     constructor(window, changeCallback) {
         this.touchBuffer = 0;
         this.posX = 0;
@@ -109,6 +141,10 @@ class PanelTracker {
         this.window.document.addEventListener('load', (e) => this._onReset(e), false);
     }
 
+    /**
+     * 
+     * @param {Event} evt 
+     */
     _onReset(evt) {
         this.posX = 0;
         this.posY = 0;
@@ -119,6 +155,10 @@ class PanelTracker {
         }));
     }
 
+    /**
+     * 
+     * @param {TouchEvent} evt 
+     */
     _onTouchStart(evt) {
         // Ensure it's a one-finger touch
         if (evt.touches && evt.touches.length === 1) {
@@ -132,6 +172,10 @@ class PanelTracker {
         }
     }
 
+    /**
+     * 
+     * @param {MouseEvent|TouchEvent} evt 
+     */
     _onTouchMove(evt) {
         this.touchBuffer++;
 
@@ -161,6 +205,10 @@ class PanelTracker {
         return { changeX, changeY };
     }
 
+    /**
+     * 
+     * @param {TouchEvent} evt 
+     */
     _onTouchEnd(evt) {
         // Fire one last move event
         const { changeX, changeY } = this._updatePositionFromTouch(this.trackedTouch);
@@ -193,6 +241,10 @@ class PanelTracker {
         };
     }
 
+    /**
+     * 
+     * @param {MouseEvent} evt 
+     */
     _onMouseDown(evt) {
         this.dragging = true;
 
@@ -202,6 +254,10 @@ class PanelTracker {
         }));
     }
 
+    /**
+     * 
+     * @param {MouseEvent} evt 
+     */
     _onMouseMove(evt) {
         if (this.dragging) {
             this.posX -= evt.movementX;
@@ -216,6 +272,10 @@ class PanelTracker {
         }
     }
 
+    /**
+     * 
+     * @param {MouseEvent} evt 
+     */
     _onMouseUp(evt) {
         this.dragging = false;
 
@@ -223,6 +283,73 @@ class PanelTracker {
             type: dragEnd,
             event: evt,
         }));
+    }
+}
+
+class LocalState {
+    /**
+     * 
+     * @param {Window} window 
+     */
+    constructor(window) {
+        this.storage = window.localStorage;
+
+        this.root = window.getComputedStyle(document.documentElement);
+        this.gridMaxX = parseInt(this.root.getPropertyValue('--button-grid-count-x'));
+        this.gridMaxY = parseInt(this.root.getPropertyValue('--button-grid-count-y'));
+
+        this.gridX = null;
+        this.gridY = null;
+        this.gridSizeX = null;
+        this.gridSizeY = null;
+        this.buttonPageSize = 100;
+
+        this.appDiv = null;
+        this.buttonContainer = null;
+        this.buttonStates = {};
+        this.interval = null;
+        this.eventInterval = null;
+        this.observer = null;
+        this.api = new Api();
+        this.panelTracker = null;
+        this.debug = false;
+    }
+
+    /**
+     * @returns {string|null}
+     */
+    getUserHex() {
+        return this.storage.getItem('userHex')
+    }
+
+    /**
+     * 
+     * @param {string} hex 
+     */
+    setUserHex(hex) {
+        this.storage.setItem('userHex', hex);
+    }
+
+    /**
+     * 
+     * @param {GridState} buttonState 
+     */
+    async storeButtonState(buttonState) {
+        const key = `${buttonState.x}_${buttonState.y}`;
+
+        this.buttonStates[key] = buttonState;
+    }
+
+    /**
+     * 
+     * @param {number} x 
+     * @param {number} y 
+     * @returns {GridState}
+     */
+    async retrieveButtonState(x, y) {
+        const key = `${x}_${y}`;
+
+        return this.buttonStates[key];
     }
 }
 
@@ -238,6 +365,11 @@ function generateRandomHex() {
     return hex;
 }
 
+/**
+ * 
+ * @param {string} hash 
+ * @returns {GridPoint|null}
+ */
 function parseHash(hash) {
     try {
         const [xStr, yStr] = hash.split(',').map(s => s.replace('#', ''));
@@ -248,6 +380,12 @@ function parseHash(hash) {
     }
 }
 
+/**
+ * 
+ * @param {LocalState} s 
+ * @param {HTMLElement} elem 
+ * @returns {boolean}
+ */
 function isInViewport(s, elem) {
     const container = s.appDiv.getBoundingClientRect();
     const rect = elem.getBoundingClientRect();
@@ -260,6 +398,14 @@ function isInViewport(s, elem) {
     );
 }
 
+/**
+ * 
+ * @param {Window} w 
+ * @param {LocalState} s 
+ * @param {number} gridX 
+ * @param {number} gridY 
+ * @returns 
+ */
 function createGridElement(w, s, gridX, gridY) {
     const rowLength = Math.sqrt(s.buttonPageSize);
 
@@ -275,12 +421,12 @@ function createGridElement(w, s, gridX, gridY) {
         div.classList.add('grid-container');
         div.style.top = `calc(${(gridYOffset)}px + var(--offset-y))`;
         div.style.left = `calc(${(gridXOffset)}px + var(--offset-x))`;
-        
-        if(s.gridSizeX && s.gridSizeY) {
+
+        if (s.gridSizeX && s.gridSizeY) {
             div.style.height = `${s.gridSizeY}px`;
             div.style.width = `${s.gridSizeX}px`;
         }
-        
+
         div.setAttribute('data-x', gridX.toString());
         div.setAttribute('data-y', gridY.toString());
         div.style['grid-template-columns'] = `repeat(${rowLength}, auto)`;
@@ -291,6 +437,13 @@ function createGridElement(w, s, gridX, gridY) {
     return div;
 }
 
+/**
+ * 
+ * @param {Window} w 
+ * @param {LocalState} s 
+ * @param {*} buttonState 
+ * @returns {HTMLDivElement}
+ */
 function renderButtons(w, s, buttonState) {
     const buttonCount = buttonState.buttons.length;
     const gridX = buttonState.x;
@@ -327,39 +480,37 @@ function renderButtons(w, s, buttonState) {
         }
     }
 
-    // if (!div.parentElement) {
-    //     s.buttonContainer.appendChild(div);
-    //     s.observer.observe(div);
-    // }
-
     buttonState.seen = true;
 
     return div;
 }
 
-async function storeButtonState(s, buttonState) {
-    const key = `${buttonState.x}_${buttonState.y}`;
-
-    s.buttonStates[key] = buttonState;
-}
-
-async function retrieveButtonState(s, x, y) {
-    const key = `${x}_${y}`;
-
-    return s.buttonStates[key];
-}
-
+/**
+ * 
+ * @param {Window} w 
+ * @param {LocalState} s 
+ * @param {number} x 
+ * @param {number} y 
+ * @returns {Promise<HTMLDivElement|null>}
+ */
 async function renderGridPoint(w, s, x, y) {
 
     if (x < 1 || y < 1) {
         return null;
     }
 
-    const buttonState = await retrieveButtonState(s, x, y) || await s.api.getButtons(x, y);
-    await storeButtonState(s, buttonState);
+    const buttonState = await s.retrieveButtonState(x, y) || await s.api.getButtons(x, y);
+    await s.storeButtonState(buttonState);
     return renderButtons(w, s, buttonState);
 }
 
+/**
+ * 
+ * @param {Window} w 
+ * @param {LocalState} s 
+ * @param {HTMLButtonElement} button 
+ * @returns {Promise<HTMLDivElement>}
+ */
 async function handleButtonClick(w, s, button) {
     const point = getGridPoint(button);
     const id = /[0-9]+/.exec(button.id)[0];
@@ -367,7 +518,7 @@ async function handleButtonClick(w, s, button) {
     button.classList.remove('pressed');
     button.classList.add('pressed');
 
-    const buttonState = await s.api.pressButton(point.x, point.y, id, s.hexCode);
+    const buttonState = await s.api.pressButton(point.x, point.y, id, s.getUserHex());
 
     if (buttonState.success) {
         console.log('You totally clicked the button');
@@ -375,16 +526,26 @@ async function handleButtonClick(w, s, button) {
         console.log('Someone else clicked the button first');
     }
 
-    await storeButtonState(s, buttonState);
+    await s.storeButtonState(buttonState);
     return renderButtons(w, s, buttonState);
 }
 
+/**
+ * 
+ * @param {HTMLElement} element 
+ * @returns {GridPoint}
+ */
 function getGridPoint(element) {
     const x = parseInt(element.getAttribute('data-x'));
     const y = parseInt(element.getAttribute('data-y'));
     return { x, y };
 }
 
+/**
+ * 
+ * @param {Window} w 
+ * @param {LocalState} s 
+ */
 async function eventLoop(w, s) {
 
     const debugDataDiv = document.getElementById('data');
@@ -443,14 +604,19 @@ async function eventLoop(w, s) {
     }
 }
 
+/**
+ * 
+ * @param {Window} w 
+ * @param {LocalState} s 
+ */
 function updateDocumentCursor(w, s) {
     const colorSelect = w.document.getElementById('color-select');
 
     if (colorSelect && colorSelect.value) {
-        s.hexCode = colorSelect.value.substring(1);
+        s.setUserHex(colorSelect.value.substring(1));
     }
 
-    const cursor = `url("/cursor/${s.hexCode}/cursor.png")`;
+    const cursor = `url("/cursor/${s.getUserHex()}/cursor.png")`;
     const cursorProp = s.appDiv.style.getPropertyValue('--cursor-url');
     if (cursorProp !== cursor) {
         w.document.body.style.setProperty('--cursor-url', cursor);
@@ -461,6 +627,12 @@ async function fixStates(w, s) {
     updateDocumentCursor(w, s);
 }
 
+/**
+ * 
+ * @param {Window} w 
+ * @param {LocalState} s 
+ * @returns 
+ */
 async function startApplication(w, s) {
     const hash = parseHash(w.location.hash);
 
@@ -493,6 +665,12 @@ async function startApplication(w, s) {
         root: w.document.getElementById('button-box')
     });
 
+    let hex = s.getUserHex()
+
+    if (!hex) {
+        s.setUserHex(generateRandomHex());
+    }
+
     const centerDiv = await renderGridPoint(w, s, s.gridX, s.gridY);
 
     s.gridSizeX = centerDiv.clientWidth;
@@ -500,7 +678,7 @@ async function startApplication(w, s) {
     s.isScrollDirty = true;
 
     /* Set some control initial states */
-    w.document.getElementById('color-select').value = `#${s.hexCode}`;
+    w.document.getElementById('color-select').value = `#${s.getUserHex()}`;
 
     /* Some browsers are just still terrible */
     s.interval = w.setInterval(async () => fixStates(w, s), 100);
@@ -509,6 +687,12 @@ async function startApplication(w, s) {
     s.eventInterval = w.setInterval(async () => await eventLoop(w, s,), 1000);
 }
 
+/**
+ * 
+ * @param {Window} w 
+ * @param {LocalState} s 
+ * @param {*} data 
+ */
 async function onPanelStateChange(w, s, data) {
     if (data.dragging && s.appDiv) {
         s.isScrollDirty = true;
@@ -519,33 +703,8 @@ async function onPanelStateChange(w, s, data) {
     await eventLoop(w, s);
 }
 
-const root = window.getComputedStyle(document.documentElement);
 
-window.state = window.state || {
-    root: root,
-    gridX: null,
-    gridY: null,
-    gridSizeX: null,
-    gridSizeY: null,
-    gridMaxX: parseInt(root.getPropertyValue('--button-grid-count-x')),
-    gridMaxY: parseInt(root.getPropertyValue('--button-grid-count-y')),
-    buttonPageSize: 100,
-    appDiv: null,
-    buttonContainer: null,
-
-    buttonStates: {},
-
-    interval: null,
-    eventInterval: null,
-    observer: null,
-    api: new Api(),
-    panelTracker: null,
-
-    // User
-    hexCode: generateRandomHex(),
-
-    debug: false,
-};
+window.state = window.state || new LocalState(window);
 
 window.state.panelTracker = new PanelTracker(window, (data) => onPanelStateChange(window, state, data)),
 
