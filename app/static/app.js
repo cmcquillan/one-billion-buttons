@@ -290,14 +290,14 @@ class LocalState {
     /**
      * 
      * @param {Window} window 
+     * @param {number} gridMaxX
+     * @param {number} gridMaxY  
      */
-    constructor(window) {
+    constructor(window, gridMaxX, gridMaxY) {
         this.storage = window.localStorage;
 
-        this.root = window.getComputedStyle(document.documentElement);
-        this.gridMaxX = parseInt(this.root.getPropertyValue('--button-grid-count-x'));
-        this.gridMaxY = parseInt(this.root.getPropertyValue('--button-grid-count-y'));
-
+        this.gridMaxX = gridMaxX;
+        this.gridMaxY = gridMaxY;
         this.gridX = null;
         this.gridY = null;
         this.gridSizeX = null;
@@ -636,7 +636,10 @@ async function fixStates(w, s) {
 async function startApplication(w, s) {
     const hash = parseHash(w.location.hash);
 
-    if (!hash || !hash.x || !hash.y) {
+    if (!hash ||
+        !hash.x || !hash.y ||
+        hash.x < 1 || hash.y < 1 ||
+        hash.x > s.gridMaxX || hash.y > gridMaxY) {
         const toX = Math.ceil((Math.random() * 1000000) % s.gridMaxX);
         const toY = Math.ceil((Math.random() * 1000000) % s.gridMaxY);
 
@@ -703,12 +706,14 @@ async function onPanelStateChange(w, s, data) {
     await eventLoop(w, s);
 }
 
+const root = window.getComputedStyle(document.documentElement);
+const gridMaxX = parseInt(root.getPropertyValue('--button-grid-count-x'));
+const gridMaxY = parseInt(root.getPropertyValue('--button-grid-count-y'));
 
-window.state = window.state || new LocalState(window);
+window.state = window.state || new LocalState(window, gridMaxX, gridMaxY);
+window.state.panelTracker = new PanelTracker(window, (data) => onPanelStateChange(window, state, data));
 
-window.state.panelTracker = new PanelTracker(window, (data) => onPanelStateChange(window, state, data)),
-
-    window.addEventListener('load', function () { startApplication(window, state); });
+window.addEventListener('load', function () { startApplication(window, state); });
 window.addEventListener('hashchange', function () {
     startApplication(window, state);
 });
