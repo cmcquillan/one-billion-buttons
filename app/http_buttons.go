@@ -10,7 +10,8 @@ import (
 )
 
 type ButtonApi struct {
-	Database ObbDb
+	Database     ObbDb
+	EventChannel chan BackgroundButtonEvent
 }
 
 func (api *ButtonApi) HandleGetButtonPage(c *gin.Context) {
@@ -105,6 +106,13 @@ func (api *ButtonApi) HandlePostButton(c *gin.Context) {
 
 	if HexCodesAreEquivalent(button.Hex, dto.Hex) {
 		res = http.StatusOK
+	}
+
+	api.EventChannel <- BackgroundButtonEvent{
+		X:     uint32(xCoord),
+		Y:     uint32(yCoord),
+		ID:    dto.ID,
+		Event: ButtonEventTypePress,
 	}
 
 	c.JSON(res, bDto)

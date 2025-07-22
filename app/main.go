@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,13 +34,16 @@ func main() {
 		connStr: connStr,
 	}
 
+	buttonEventChannel := make(chan BackgroundButtonEvent, 2000)
+	go BackgroundEventHandler(buttonEventChannel)
+
 	router := gin.Default()
 
 	router.UseH2C = true
 	router.ForwardedByClientIP = true
 	router.SetTrustedProxies(nil)
 
-	buttonApi := ButtonApi{Database: db}
+	buttonApi := ButtonApi{Database: db, EventChannel: buttonEventChannel}
 	cursorApi := CursorApi{}
 
 	router.POST("/api/:x/:y", buttonApi.HandlePostButton)
@@ -66,9 +72,30 @@ func main() {
 		c.Status(http.StatusOK)
 		c.File("./static/index.html")
 	})
-	//router.StaticFile("/", "./static/index.html")
+
 	router.StaticFile("/app.js", "./static/app.js")
 	router.StaticFile("/style.css", "./static/style.css")
 
-	router.Run(":8080")
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: router,
+	}
+
+	go func() {
+		log.Print("Starting one billion buttons http server")
+		if err := server.ListenAndServe(); err != nil {
+			log.Printf("%v", err)
+		}
+	}()
+
+	sigChan := make(chan os.Signal, 2)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGINT)
+
+	<-sigChan
+
+	log.Print("Shutting down one billion buttons http server")
+	server.Shutdown(context.TODO())
+
+	close(buttonEventChannel)
 }
