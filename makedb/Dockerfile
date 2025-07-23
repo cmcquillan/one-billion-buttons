@@ -14,6 +14,7 @@ RUN GOOS=linux go build -o application
 # Lets us change them without affecting build cache
 COPY makedb/migrations/*.sql ./migrations/
 COPY makedb/reset/*.sql ./reset/
+COPY makedb/compute_stats/*.sql ./compute_stats/
 
 EXPOSE 8080
 

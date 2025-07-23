@@ -57,6 +57,11 @@ func main() {
 				log.Printf("failed to reset db: %v", errReset)
 				failure = true
 			}
+		case "stats":
+			if errStats := ExecDir(dbc, "./compute_stats"); errStats != nil {
+				log.Printf("failed to compute stats: %v", errStats)
+				failure = true
+			}
 		default:
 			log.Printf("%v does not match a valid command", verb)
 			failure = true

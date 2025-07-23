@@ -34,8 +34,11 @@ func main() {
 		connStr: connStr,
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+
 	buttonEventChannel := make(chan BackgroundButtonEvent, 2000)
 	go BackgroundEventHandler(db, buttonEventChannel)
+	go BackgroundComputeStatistics(db, ctx)
 
 	router := gin.Default()
 
@@ -97,6 +100,7 @@ func main() {
 
 	<-sigChan
 
+	cancel()
 	log.Print("Shutting down one billion buttons http server")
 	server.Shutdown(context.TODO())
 

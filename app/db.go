@@ -14,6 +14,7 @@ type ButtonStat struct {
 	StatDesc string `json:"stat_desc"`
 	Val      int64  `json:"val"`
 	Scale    int64  `json:"scale"`
+	Order    int64  `json:"order"`
 }
 
 type ObbDb interface {
@@ -22,13 +23,14 @@ type ObbDb interface {
 	GetButtonStats() ([]ButtonStat, error)
 	LogButtonEvent(x uint64, y uint64, id int64, eventType ButtonEventType) error
 	AdjustStat(statKey string, delta int64) error
+	RefreshStats() error
 }
 
 type ObbDbSql struct {
 	connStr string
 }
 
-func (db *ObbDbSql) AdjustStat(statKey string, delta int64) error {
+func openConnAndExec(db *ObbDbSql, exec func(dbc *sql.DB) error) error {
 	dbc, err := sql.Open("postgres", db.connStr)
 
 	if err != nil {
@@ -38,121 +40,106 @@ func (db *ObbDbSql) AdjustStat(statKey string, delta int64) error {
 
 	defer dbc.Close()
 
-	_, err = dbc.Exec("update button_stat set val = val + $1 where stat_key = $2", delta, statKey)
-
-	if err != nil {
-		log.Printf("could not adjust stat %s by %d: %v", statKey, delta, err)
+	if err := exec(dbc); err != nil {
+		log.Printf("could not execute operation: %v", err)
 		return err
 	}
 
 	return nil
 }
 
+func (db *ObbDbSql) RefreshStats() error {
+	err := openConnAndExec(db, func(dbc *sql.DB) error {
+		_, err := dbc.Exec("call update_button_stats()")
+		return err
+	})
+
+	return err
+}
+
+func (db *ObbDbSql) AdjustStat(statKey string, delta int64) error {
+	err := openConnAndExec(db, func(dbc *sql.DB) error {
+		_, err := dbc.Exec("update button_stat set val = val + $1 where stat_key = $2", delta, statKey)
+		return err
+	})
+
+	return err
+}
+
 func (db *ObbDbSql) LogButtonEvent(x uint64, y uint64, id int64, eventType ButtonEventType) error {
-	dbc, err := sql.Open("postgres", db.connStr)
-
-	if err != nil {
-		log.Printf("could not open database connection: %v", err)
+	err := openConnAndExec(db, func(dbc *sql.DB) error {
+		_, err := dbc.Exec("insert into button_event (x_coord, y_coord, button_id, event_type) values ($1, $2, $3, $4)", x, y, id, eventType)
 		return err
-	}
+	})
 
-	defer dbc.Close()
-
-	_, err = dbc.Exec("insert into button_event (x_coord, y_coord, button_id, event_type) values ($1, $2, $3, $4)", x, y, id, eventType)
-
-	if err != nil {
-		log.Printf("could not log button event %v", err)
-		return err
-	}
-	return nil
+	return err
 }
 
 func (db *ObbDbSql) GetButtonStats() ([]ButtonStat, error) {
 	rows := 0
 
-	dbc, err := sql.Open("postgres", db.connStr)
-	if err != nil {
-		log.Printf("could not open database connection: %v", err)
-		return nil, err
-	}
+	var res *sql.Rows
 
-	defer dbc.Close()
-
-	res, err := dbc.Query("select stat_key, stat_name, stat_desc, val, scale from button_stat")
-
-	if err != nil {
-		log.Printf("could not query button stats: %v", err)
-		return nil, err
-	}
+	err := openConnAndExec(db, func(dbc *sql.DB) error {
+		iRes, err := dbc.Query("select stat_key, stat_name, stat_desc, val, scale, \"order\" from button_stat")
+		res = iRes
+		return err
+	})
 
 	result := make([]ButtonStat, 10)
 
 	for res.Next() {
 		result[rows] = ButtonStat{}
 
-		res.Scan(&result[rows].StatKey, &result[rows].StatName, &result[rows].StatDesc, &result[rows].Val, &result[rows].Scale)
+		res.Scan(&result[rows].StatKey,
+			&result[rows].StatName,
+			&result[rows].StatDesc,
+			&result[rows].Val,
+			&result[rows].Scale,
+			&result[rows].Order)
 		rows++
 	}
 
-	return result[0:rows], nil
+	return result[0:rows], err
 }
 
 func (db *ObbDbSql) GetPageButtonState(x int64, y int64) ([]byte, error) {
-	dbc, err := sql.Open("postgres", db.connStr)
+	var rows *sql.Rows
 
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
-
-	defer dbc.Close()
-
-	rows, err := dbc.Query("select buttons from button where x_coord = $1 and y_coord = $2;", x, y)
-
-	if err != nil {
-		log.Fatal(err)
-		return nil, err
-	}
+	err := openConnAndExec(db, func(dbc *sql.DB) error {
+		iRows, err := dbc.Query("select buttons from button where x_coord = $1 and y_coord = $2;", x, y)
+		rows = iRows
+		return err
+	})
 
 	if rows.Next() {
 		var bytes []byte
-		if err := rows.Scan(&bytes); err != nil {
-			log.Fatal(err)
-			return nil, err
+		if serr := rows.Scan(&bytes); err != nil {
+			log.Printf("could not scan button: %v", err)
+			return nil, serr
 		}
 
-		return bytes, nil
+		return bytes, err
 	}
 
 	return nil, errors.New("coordinate not found")
 }
 
 func (db *ObbDbSql) SetButtonState(x int64, y int64, index int64, rgb []byte) error {
-	dbc, err := sql.Open("postgres", db.connStr)
+	err := openConnAndExec(db, func(dbc *sql.DB) error {
+		stmt, err := dbc.Prepare("call set_button_color ($1, $2, $3, $4)")
 
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
+		if err != nil {
+			log.Fatal(err)
+			return err
+		}
 
-	defer dbc.Close()
+		defer stmt.Close()
 
-	stmt, err := dbc.Prepare("call set_button_color ($1, $2, $3, $4)")
+		log.Printf("setting (%d, %d, %d) to %s", x, y, index, rgb)
+		_, err2 := stmt.Exec(x, y, index, rgb)
+		return err2
+	})
 
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-
-	defer stmt.Close()
-
-	log.Printf("setting (%d, %d, %d) to %s", x, y, index, rgb)
-	_, err2 := stmt.Exec(x, y, index, rgb)
-
-	if err2 != nil {
-		log.Fatal(err)
-		return err
-	}
-
-	return nil
+	return err
 }

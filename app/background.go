@@ -1,14 +1,15 @@
 package main
 
 import (
+	"context"
 	"log"
 	"time"
 )
 
-type ButtonEventType int
+type ButtonEventType string
 
 const (
-	ButtonEventTypePress ButtonEventType = iota
+	ButtonEventTypePress ButtonEventType = "press"
 )
 
 type BackgroundButtonEvent struct {
@@ -26,9 +27,9 @@ func BackgroundEventHandler(db ObbDb, c <-chan BackgroundButtonEvent) {
 
 		switch evt.Event {
 		case ButtonEventTypePress:
-			RecordButtonPressStatistics(db, evt)
+			RecordButtonPress(db, evt)
 		default:
-			log.Printf("unknown event type %d", evt.Event)
+			log.Printf("unknown event type %s", evt.Event)
 		}
 
 		log.Printf("background event %v received for %d, %d, %d", evt.Event, evt.X, evt.Y, evt.ID)
@@ -43,7 +44,7 @@ func BackgroundEventHandler(db ObbDb, c <-chan BackgroundButtonEvent) {
 	log.Printf("Background event handler stopped")
 }
 
-func RecordButtonPressStatistics(db ObbDb, evt BackgroundButtonEvent) {
+func RecordButtonPress(db ObbDb, evt BackgroundButtonEvent) {
 	if err := db.LogButtonEvent(evt.X, evt.Y, evt.ID, evt.Event); err != nil {
 		log.Printf("could not log button event: %v", err)
 		return
@@ -53,4 +54,23 @@ func RecordButtonPressStatistics(db ObbDb, evt BackgroundButtonEvent) {
 		log.Printf("could not adjust button press stat: %v", err)
 		return
 	}
+}
+
+func BackgroundComputeStatistics(db ObbDb, ctx context.Context) {
+	log.Printf("Background statistics worker started")
+	done := false
+	for !done {
+		select {
+		case <-ctx.Done():
+			log.Printf("Background statistics worker stopping")
+			done = true
+		case <-time.After(time.Second * 120):
+			log.Printf("Refreshing stats")
+			if err := db.RefreshStats(); err != nil {
+				log.Printf("could not refresh stats: %v", err)
+			}
+		}
+	}
+
+	log.Printf("Background statistics worker stopped")
 }
