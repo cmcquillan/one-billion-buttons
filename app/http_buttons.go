@@ -109,8 +109,8 @@ func (api *ButtonApi) HandlePostButton(c *gin.Context) {
 	}
 
 	api.EventChannel <- BackgroundButtonEvent{
-		X:     uint32(xCoord),
-		Y:     uint32(yCoord),
+		X:     uint64(xCoord),
+		Y:     uint64(yCoord),
 		ID:    dto.ID,
 		Event: ButtonEventTypePress,
 	}

@@ -35,7 +35,7 @@ func main() {
 	}
 
 	buttonEventChannel := make(chan BackgroundButtonEvent, 2000)
-	go BackgroundEventHandler(buttonEventChannel)
+	go BackgroundEventHandler(db, buttonEventChannel)
 
 	router := gin.Default()
 
@@ -72,6 +72,9 @@ func main() {
 		c.Status(http.StatusOK)
 		c.File("./static/index.html")
 	})
+
+	statsApi := StatsApi{Database: db}
+	router.GET("/api/stats", statsApi.HandleGetButtonStats)
 
 	router.StaticFile("/app.js", "./static/app.js")
 	router.StaticFile("/style.css", "./static/style.css")
