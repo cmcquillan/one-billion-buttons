@@ -19,6 +19,16 @@
  * @property {string?} next
  */
 
+/**
+ * @typedef ButtonStat
+ * @property {string} stat_key
+ * @property {string} stat_name
+ * @property {string} stat_desc
+ * @property {number} val
+ * @property {number} scale
+ * @property {number} order
+ */
+
 window.CSS.registerProperty({
     name: '--cursor-url',
     inherits: true,
@@ -86,7 +96,7 @@ class Api {
      * @param {number} y 
      * @param {string} id 
      * @param {string} hex 
-     * @returns {GridState}
+     * @returns {Promise<GridState>}
      */
     pressButton(x, y, id, hex) {
         const key = `${x}_${y}`;
@@ -106,6 +116,20 @@ class Api {
             });
         return this.posts[key];
     };
+
+    /**
+     * 
+     * @returns {Promise<ButtonStat[]>}
+     */
+    getStats() {
+        return fetch('/api/stats')
+            .then(resp => {
+                if (resp.status === 200) {
+                    return resp.json();
+                }
+                return {};
+            });
+    }
 }
 
 const dragReset = 'drag-reset';
@@ -652,7 +676,7 @@ async function startApplication(w, s) {
 
     s.appDiv = document.getElementById('app');
     // We reset ALL state here
-    s.buttonContainer = document.getElementById('button-box');
+    s.buttonContainer = document.getElementById('buttonBox');
     s.buttonContainer.innerHTML = '';
 
     s.observer = new IntersectionObserver((entries) => {
@@ -665,7 +689,7 @@ async function startApplication(w, s) {
             }
         });
     }, {
-        root: w.document.getElementById('button-box')
+        root: w.document.getElementById('buttonBox')
     });
 
     let hex = s.getUserHex()
@@ -673,6 +697,16 @@ async function startApplication(w, s) {
     if (!hex) {
         s.setUserHex(generateRandomHex());
     }
+
+    w.document.getElementById('buttonBox').addEventListener('click', async (evt) => {
+        if (evt.target.tagName === 'BUTTON' && evt.target.classList.contains('button')) {
+            await handleButtonClick(w, state, evt.target);
+        }
+    });
+
+    w.document.getElementById('statsTrigger').addEventListener('click', async (evt) => {
+        await showStats(evt, w, s);
+    });
 
     const centerDiv = await renderGridPoint(w, s, s.gridX, s.gridY);
 
@@ -706,6 +740,43 @@ async function onPanelStateChange(w, s, data) {
     await eventLoop(w, s);
 }
 
+/**
+ * 
+ * @param {MouseEvent} evt 
+ * @param {Window} w
+ * @param {LocalState} s 
+ */
+async function showStats(evt, w, s) {
+    const stats = await s.api.getStats();
+
+    if (stats instanceof Array) {
+        stats.sort((a, b) => a.order - b.order);
+    }
+
+    const dialog = w.document.getElementById('statsDialog');
+
+    const statsDiv = dialog.getElementsByClassName('stats-container')[0];
+
+    const fragment = w.document.createDocumentFragment();
+    for (stat of stats) {
+        const value = stat.val * Math.pow(10, stat.scale);
+        console.log(stat);
+
+        const div = fragment.appendChild(w.document.createElement('div'));
+        div.classList.add('stat-item');
+        const lSpan = div.appendChild(w.document.createElement('span'));
+        lSpan.classList.add('stat-label');
+        lSpan.textContent = stat.stat_name;
+        const vSpan = div.appendChild(w.document.createElement('span'));
+        vSpan.classList.add('stat-value');
+        vSpan.textContent = value.toLocaleString();
+    }
+
+    statsDiv.replaceChildren(fragment);
+    dialog.showModal();
+
+}
+
 const root = window.getComputedStyle(document.documentElement);
 const gridMaxX = parseInt(root.getPropertyValue('--button-grid-count-x'));
 const gridMaxY = parseInt(root.getPropertyValue('--button-grid-count-y'));
@@ -735,9 +806,3 @@ window.document.addEventListener('keydown', (evt) => {
     }
 });
 
-window.document.addEventListener('click', async (evt) => {
-    if (evt.target.tagName === 'BUTTON' && evt.target.classList.contains('button')) {
-        await handleButtonClick(window, state, evt.target);
-    }
-
-});

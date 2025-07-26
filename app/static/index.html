@@ -12,7 +12,12 @@
 
 <body>
     <div id="app" class="app-grid">
-        <div id="button-box" class="button-box">
+        <div id="buttonBox" class="button-box">
+        </div>
+        <div id="statsTrigger" class="stats-trigger">
+            <span>
+                ?
+            </span>
         </div>
         <div id="control-box" class="control-box collapsed">
             <input id="touch-bar-control" class="touch-bar-control" type="checkbox" name="touch-bar-control" />
@@ -41,6 +46,18 @@
             onchange="(evt) => updateColor(evt, window, window.state);">
         </div>
     </div>
+    <dialog id="statsDialog" class="stats-dialog">
+        <div class="stats-header">
+            <h2>One Billion Buttons Statistics</h2>
+        </div>
+        <div id="statsContainer" class="stats-container">
+        </div>
+        <div class="stats-footer">
+            <form method="dialog">
+                <button>Close</button>
+            </form>
+        </div>
+    </dialog>
 
 </body>
 
