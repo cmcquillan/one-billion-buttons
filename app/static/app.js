@@ -318,6 +318,7 @@ class LocalState {
      * @param {number} gridMaxY  
      */
     constructor(window, gridMaxX, gridMaxY) {
+        this.document = window.document;
         this.storage = window.localStorage;
 
         this.gridMaxX = gridMaxX;
@@ -374,6 +375,20 @@ class LocalState {
         const key = `${x}_${y}`;
 
         return this.buttonStates[key];
+    }
+
+    /**
+     * @returns {HTMLDialogElement}
+     */
+    get controlsModal() {
+        return this.document.getElementById('controlDialog');
+    }
+
+    /**
+     * @returns {HTMLDialogElement}
+     */
+    get statsModal() {
+        return this.document.getElementById('statsDialog');
     }
 }
 
@@ -708,6 +723,33 @@ async function startApplication(w, s) {
         await showStats(evt, w, s);
     });
 
+    w.document.getElementById('controlTrigger').addEventListener('click', async (evt) => {
+        await showControls(evt, w, s);
+    });
+
+    // Modal-closing clicks
+    w.document.addEventListener('click', (evt) => {
+        const rect = evt.target.getBoundingClientRect();
+
+        if (s.statsModal.open && evt.target === s.statsModal) {
+            if (evt.clientX < rect.left ||
+                evt.clientX > rect.right ||
+                evt.clientY < rect.top ||
+                evt.clientY > rect.bottom) {
+                s.statsModal.close();
+            }
+        }
+
+        if (s.controlsModal.open && evt.target === s.controlsModal) {
+            if (evt.clientX < rect.left ||
+                evt.clientX > rect.right ||
+                evt.clientY < rect.top ||
+                evt.clientY > rect.bottom) {
+                s.controlsModal.close();
+            }
+        }
+    });
+
     const centerDiv = await renderGridPoint(w, s, s.gridX, s.gridY);
 
     s.gridSizeX = centerDiv.clientWidth;
@@ -753,14 +795,13 @@ async function showStats(evt, w, s) {
         stats.sort((a, b) => a.order - b.order);
     }
 
-    const dialog = w.document.getElementById('statsDialog');
+    const dialog = s.statsModal;
 
     const statsDiv = dialog.getElementsByClassName('stats-container')[0];
 
     const fragment = w.document.createDocumentFragment();
     for (stat of stats) {
         const value = stat.val * Math.pow(10, stat.scale);
-        console.log(stat);
 
         const div = fragment.appendChild(w.document.createElement('div'));
         div.classList.add('stat-item');
@@ -774,7 +815,10 @@ async function showStats(evt, w, s) {
 
     statsDiv.replaceChildren(fragment);
     dialog.showModal();
+}
 
+async function showControls(evt, w, s) {
+    s.controlsModal.showModal();
 }
 
 const root = window.getComputedStyle(document.documentElement);
@@ -806,3 +850,6 @@ window.document.addEventListener('keydown', (evt) => {
     }
 });
 
+window.document.addEventListener('click', (evt) => {
+    console.log(evt);
+});
