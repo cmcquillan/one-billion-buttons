@@ -497,6 +497,7 @@ function renderButtons(w, s, buttonState) {
         if (!button) {
             button = w.document.createElement('button');
             button.classList.add('button');
+            button.setAttribute('aria-label', `Button ${id}`);
 
             if (buttonState.seen) {
                 button.classList.add('seen');

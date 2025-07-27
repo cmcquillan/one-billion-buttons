@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
     <title>Approximately 1 billion buttons</title>
@@ -11,51 +11,55 @@
 </head>
 
 <body>
-    <div id="app" class="app-grid">
-        <div id="buttonBox" class="button-box">
+    <main>
+        <div id="app" class="app-grid">
+            <div id="buttonBox" class="button-box">
+            </div>
+            <div id="statsTrigger" role="button" name="Open Info" class="stats-trigger trigger"
+                aria-details="Opens a window that displays statistics and other helpful information for One Billion Buttons.">
+                <span>
+                    ?
+                </span>
+            </div>
+            <div id="controlTrigger" role="button" name="Open Options" class="control-trigger trigger"
+                aria-details="Opens a window that displays user options for One Billion Buttons.">
+                <span>
+                    ⚙
+                </span>
+            </div>
         </div>
-        <div id="statsTrigger" role="button" class="stats-trigger trigger" aria-details="Opens a window that displays statistics and other helpful information for One Billion Buttons.">
-            <span>
-                ?
-            </span>
+        <div id="debug" class="debug" style="display: none;">
+            <div id="data" class="debug-data" oninput="(evt) => updateColor(evt, window, window.state);"
+                onchange="(evt) => updateColor(evt, window, window.state);">
+            </div>
         </div>
-        <div id="controlTrigger" role="button" class="control-trigger trigger" aria-details="Opens a window that displays user options for One Billion Buttons.">
-            <span>
-                ⚙
-            </span>
-        </div>
-    </div>
-    <div id="debug" class="debug" style="display: none;">
-        <div id="data" class="debug-data" oninput="(evt) => updateColor(evt, window, window.state);"
-            onchange="(evt) => updateColor(evt, window, window.state);">
-        </div>
-    </div>
-    <dialog id="statsDialog" class="stats-dialog">
-        <div class="stats-header modal-header">
-            <h2>One Billion Buttons Statistics</h2>
-        </div>
-        <div id="statsContainer" class="stats-container">
-        </div>
-        <div class="stats-footer">
-            <form method="dialog">
-                <button>Close</button>
-            </form>
-        </div>
-    </dialog>
-    <dialog id="controlDialog" class="control-dialog">
-        <div class="control-header modal-header">
-            <h2>Options</h2>
-        </div>
-        <div id="controlContainer" class="control-container">
-            <label for="color-select">Button Color</label>
-            <input id="color-select" value="#fefefe" type="color" />
-        </div>
-        <div class="stats-footer">
-            <form method="dialog">
-                <button>Close</button>
-            </form>
-        </div>
-    </dialog>
+        <dialog id="statsDialog" class="stats-dialog">
+            <div class="stats-header modal-header">
+                <h2>One Billion Buttons Statistics</h2>
+            </div>
+            <div id="statsContainer" class="stats-container">
+            </div>
+            <div class="stats-footer">
+                <form method="dialog">
+                    <button>Close</button>
+                </form>
+            </div>
+        </dialog>
+        <dialog id="controlDialog" class="control-dialog">
+            <div class="control-header modal-header">
+                <h2>Options</h2>
+            </div>
+            <div id="controlContainer" class="control-container">
+                <label for="color-select">Button Color</label>
+                <input id="color-select" value="#fefefe" type="color" />
+            </div>
+            <div class="stats-footer">
+                <form method="dialog">
+                    <button>Close</button>
+                </form>
+            </div>
+        </dialog>
+    </main>
 </body>
 
 </html>
