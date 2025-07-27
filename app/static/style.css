@@ -61,8 +61,8 @@ body * {
   position: relative;
   min-width: calc(var(--button-width) * var(--button-grid-count-x) * var(--button-per-grid-x) * 1px);
   min-height: calc(var(--button-height) * var(--button-grid-count-y) * var(--button-per-grid-y) * 1px);
-  width: 100vw;
-  height: 100vh;
+  width: 100dvw;
+  height: 100dvh;
 
   overflow-y: hidden;
   overflow-x: hidden;
