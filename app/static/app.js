@@ -13,7 +13,7 @@
  */
 
 /**
- * @typedef GridState 
+ * @interface GridState 
  * @implements {GridPoint}
  * @property {ButtonState[]} buttons
  * @property {string?} next
@@ -99,22 +99,7 @@ class Api {
      * @returns {Promise<GridState>}
      */
     pressButton(x, y, id, hex) {
-        const key = `${x}_${y}`;
-
-        const cache = this.posts[key];
-        if (cache) {
-            return cache;
-        }
-
-        this.posts[key] = this._pressButton(x, y, id, hex)
-            .catch(e => {
-                this.posts[key] = null;
-                return e;
-            }).then(r => {
-                this.posts[key] = null;
-                return r;
-            });
-        return this.posts[key];
+        return this._pressButton(x, y, id, hex);
     };
 
     /**
@@ -331,6 +316,10 @@ class LocalState {
 
         this.appDiv = null;
         this.buttonContainer = null;
+
+        /**
+         * @type {Object.<string,Array.GridState>}
+         */
         this.buttonStates = {};
         this.interval = null;
         this.eventInterval = null;
@@ -361,8 +350,24 @@ class LocalState {
      */
     async storeButtonState(buttonState) {
         const key = `${buttonState.x}_${buttonState.y}`;
+        let modified = false;
 
-        this.buttonStates[key] = buttonState;
+        if (this.buttonStates[key]) {
+
+            for (let i = 0; i < buttonState.buttons.length; i++) {
+                if (buttonState.buttons[i].hex) {
+                    this.buttonStates[key].buttons[i].hex = buttonState.buttons[i].hex;
+                    modified = true;
+                }
+            }
+        }
+        else {
+            this.buttonStates[key] = buttonState;
+        }
+
+        if (modified) {
+            this.buttonStates[key].next = buttonState.next;
+        }
     }
 
     /**
@@ -513,6 +518,8 @@ function renderButtons(w, s, buttonState) {
             button.classList.add('pressed');
 
             button.style.color = `#${buttonState.buttons[i].hex}`;
+        } else {
+            button.classList.remove('pressed');
         }
 
         if (!button.parentElement) {
@@ -849,8 +856,4 @@ window.document.addEventListener('keydown', (evt) => {
             ? 'block'
             : 'none';
     }
-});
-
-window.document.addEventListener('click', (evt) => {
-    console.log(evt);
 });
