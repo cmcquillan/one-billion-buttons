@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log"
 
-	_ "github.com/lib/pq"
+	pq "github.com/lib/pq"
 )
 
 type ButtonStat struct {
@@ -21,7 +21,7 @@ type ObbDb interface {
 	GetPageButtonState(x int64, y int64) ([]byte, error)
 	SetButtonState(x int64, y int64, index int64, rgb []byte) error
 	GetButtonStats() ([]ButtonStat, error)
-	LogButtonEvent(x uint64, y uint64, id int64, eventType ButtonEventType) error
+	LogButtonEvents(events []BackgroundButtonEvent) error
 	AdjustStat(statKey string, delta int64) error
 	RefreshStats() error
 }
@@ -66,9 +66,36 @@ func (db *ObbDbSql) AdjustStat(statKey string, delta int64) error {
 	return err
 }
 
-func (db *ObbDbSql) LogButtonEvent(x uint64, y uint64, id int64, eventType ButtonEventType) error {
+func (db *ObbDbSql) LogButtonEvents(events []BackgroundButtonEvent) error {
 	err := openConnAndExec(db, func(dbc *sql.DB) error {
-		_, err := dbc.Exec("insert into button_event (x_coord, y_coord, button_id, event_type) values ($1, $2, $3, $4)", x, y, id, eventType)
+		txn, err := dbc.Begin()
+
+		if err != nil {
+			return err
+		}
+
+		stmt, _ := txn.Prepare(pq.CopyIn("button_event", "x_coord", "y_coord", "button_id", "event_type"))
+
+		for _, evt := range events {
+			_, err = stmt.Exec(evt.X, evt.Y, evt.ID, evt.Event)
+			if err != nil {
+				log.Printf("could not prepare bulk insert %v", err)
+				return err
+			}
+		}
+
+		_, err = stmt.Exec()
+		if err != nil {
+			log.Printf("could not execute final bulk insert %v", err)
+		}
+
+		err = stmt.Close()
+
+		if err != nil {
+			log.Printf("could not close statement %v", err)
+		}
+
+		err = txn.Commit()
 		return err
 	})
 
