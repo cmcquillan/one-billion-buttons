@@ -88,3 +88,7 @@ func BackgroundComputeStatistics(db ObbDb, ctx context.Context) {
 
 	log.Printf("Background statistics worker stopped")
 }
+
+func BackgroundCreateMinimaps(db ObbDb, ctx context.Context) {
+
+}
