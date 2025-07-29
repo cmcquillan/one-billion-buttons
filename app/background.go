@@ -89,6 +89,41 @@ func BackgroundComputeStatistics(db ObbDb, ctx context.Context) {
 	log.Printf("Background statistics worker stopped")
 }
 
-func BackgroundCreateMinimaps(db ObbDb, ctx context.Context) {
+func BackgroundCreateMinimaps(locker Lock, db ObbDb, ctx context.Context) {
+	log.Print("Background minimap maker started")
+	ticker := time.NewTicker(time.Minute * 10)
+	done := false
+	for !done {
+		select {
+		case <-ctx.Done():
+			done = true
+			log.Print("Background minimap maker stopping")
+		case <-ticker.C:
+			log.Print("Generating minimap")
+			CreateMinimap(locker, db, ctx)
+		}
+	}
 
+	log.Print("Background minimap maker stopped")
+}
+
+const MINIMAP_LOCK_TYPE = "minimap_gen"
+
+func CreateMinimap(locker Lock, db ObbDb, ctx context.Context) {
+	lockVal, err := locker.AcquireLock(MINIMAP_LOCK_TYPE, time.Hour)
+
+	if err == ErrLockNotAcquired {
+		log.Printf("%s lock already acquired, deferring work", MINIMAP_LOCK_TYPE)
+		return
+	}
+
+	if err != nil {
+		log.Printf("error acquiring lock: %v", err)
+		return
+	}
+
+	log.Printf("lock %s acquired for %s", lockVal.Value, lockVal.Type)
+
+	defer log.Printf("lock %s released for %s", lockVal.Value, lockVal.Type)
+	defer locker.ReleaseLock(lockVal)
 }

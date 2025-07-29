@@ -30,26 +30,12 @@ type ObbDbSql struct {
 	connStr string
 }
 
-func openConnAndExec(db *ObbDbSql, exec func(dbc *sql.DB) error) error {
-	dbc, err := sql.Open("postgres", db.connStr)
-
-	if err != nil {
-		log.Printf("could not open database connection: %v", err)
-		return err
-	}
-
-	defer dbc.Close()
-
-	if err := exec(dbc); err != nil {
-		log.Printf("could not execute operation: %v", err)
-		return err
-	}
-
-	return nil
+func (db *ObbDbSql) GetConnectionString() string {
+	return db.connStr
 }
 
 func (db *ObbDbSql) RefreshStats() error {
-	err := openConnAndExec(db, func(dbc *sql.DB) error {
+	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
 		_, err := dbc.Exec("call update_button_stats()")
 		return err
 	})
@@ -58,7 +44,7 @@ func (db *ObbDbSql) RefreshStats() error {
 }
 
 func (db *ObbDbSql) AdjustStat(statKey string, delta int64) error {
-	err := openConnAndExec(db, func(dbc *sql.DB) error {
+	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
 		_, err := dbc.Exec("update button_stat set val = val + $1 where stat_key = $2", delta, statKey)
 		return err
 	})
@@ -67,7 +53,7 @@ func (db *ObbDbSql) AdjustStat(statKey string, delta int64) error {
 }
 
 func (db *ObbDbSql) LogButtonEvents(events []BackgroundButtonEvent) error {
-	err := openConnAndExec(db, func(dbc *sql.DB) error {
+	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
 		txn, err := dbc.Begin()
 
 		if err != nil {
@@ -107,7 +93,7 @@ func (db *ObbDbSql) GetButtonStats() ([]ButtonStat, error) {
 
 	var res *sql.Rows
 
-	err := openConnAndExec(db, func(dbc *sql.DB) error {
+	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
 		iRes, err := dbc.Query("select stat_key, stat_name, stat_desc, val, scale, \"order\" from button_stat")
 		res = iRes
 		return err
@@ -133,7 +119,7 @@ func (db *ObbDbSql) GetButtonStats() ([]ButtonStat, error) {
 func (db *ObbDbSql) GetPageButtonState(x int64, y int64) ([]byte, error) {
 	var rows *sql.Rows
 
-	err := openConnAndExec(db, func(dbc *sql.DB) error {
+	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
 		iRows, err := dbc.Query("select buttons from button where x_coord = $1 and y_coord = $2;", x, y)
 		rows = iRows
 		return err
@@ -153,7 +139,7 @@ func (db *ObbDbSql) GetPageButtonState(x int64, y int64) ([]byte, error) {
 }
 
 func (db *ObbDbSql) SetButtonState(x int64, y int64, index int64, rgb []byte) error {
-	err := openConnAndExec(db, func(dbc *sql.DB) error {
+	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
 		stmt, err := dbc.Prepare("call set_button_color ($1, $2, $3, $4)")
 
 		if err != nil {
