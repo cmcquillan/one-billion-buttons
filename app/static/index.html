@@ -27,6 +27,13 @@
                     ⚙
                 </span>
             </div>
+            <div id="mapTrigger" role="button" name="Open Minimap" class="map-trigger trigger"
+                aria-details="Opens a window that displays a minimap for One Billion Buttons.">
+                <span>
+                    Map
+                </span>
+            </div>
+
         </div>
         <div id="debug" class="debug" style="display: none;">
             <div id="data" class="debug-data" oninput="(evt) => updateColor(evt, window, window.state);"
@@ -39,7 +46,7 @@
             </div>
             <div id="statsContainer" class="stats-container">
             </div>
-            <div class="stats-footer">
+            <div class="stats-footer modal-footer">
                 <form method="dialog">
                     <button>Close</button>
                 </form>
@@ -53,10 +60,15 @@
                 <label for="color-select">Button Color</label>
                 <input id="color-select" value="#fefefe" type="color" />
             </div>
-            <div class="stats-footer">
+            <div class="control-footer modal-footer">
                 <form method="dialog">
                     <button>Close</button>
                 </form>
+            </div>
+        </dialog>
+        <dialog id="mapDialog" class="map-dialog">
+            <div id="mapContainer" class="map-container">
+                <img id="minimap" class="minimap" />
             </div>
         </dialog>
     </main>

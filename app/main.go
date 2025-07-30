@@ -86,6 +86,7 @@ func main() {
 
 	router.StaticFile("/app.js", "./static/app.js")
 	router.StaticFile("/style.css", "./static/style.css")
+	router.StaticFile("/minimap.png", "./static/minimap.png")
 
 	server := &http.Server{
 		Addr:    ":8080",

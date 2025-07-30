@@ -96,6 +96,16 @@ body * {
   border-top-right-radius: var(--trigger-hw);
 }
 
+.map-trigger {
+  bottom: 0;
+  right: 0;
+
+  border-top: var(--trigger-border);
+  border-left: var(--trigger-border);
+  border-top-left-radius: var(--trigger-hw);
+
+}
+
 .stats-trigger span {
   padding-top: 0.5rem;
   padding-right: 1rem;
@@ -113,6 +123,17 @@ body * {
   float: left;
 
   font-size: var(--trigger-font-size);
+  font-weight: bolder;
+
+  cursor: pointer;
+}
+
+.map-trigger span {
+  padding-top: 1.5rem;
+  padding-right: 0.5rem;
+  float: right;
+
+  font-size: var(--trigger-font-size) * 0.80;
   font-weight: bolder;
 
   cursor: pointer;
@@ -206,6 +227,12 @@ body * {
 }
 
 :modal {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-dialog:modal,
+.control-dialog:modal {
   position: fixed;
   top: 50%;
   left: 50%;
@@ -237,4 +264,32 @@ body * {
 .stats-footer {
   padding-top: 1rem;
   text-align: center;
+}
+
+.map-dialog:modal {
+  padding: 0;
+  margin: auto;
+  height: min-content;
+  width: min-content;
+}
+
+img.minimap {
+  aspect-ratio: var(--button-grid-count-x)/var(--button-grid-count-y);
+  height: 80vh;
+}
+
+
+@media (max-width: 768px) and (orientation: portrait) {
+  img.minimap {
+    height: unset;
+    width: 80vw;
+  }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  img.minimap {
+    transform: rotate(90deg);
+    height: unset;
+    width: 60vw;
+  }
 }

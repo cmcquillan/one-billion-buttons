@@ -138,16 +138,20 @@ class PanelTracker {
         this.window = window;
         this.trackedTouch = null;
 
-        this.window.document.addEventListener('mousemove', (e) => this._onMouseMove(e), false);
-        this.window.document.addEventListener('touchmove', (e) => this._onTouchMove(e), false);
-        this.window.document.addEventListener('mousedown', (e) => this._onMouseDown(e), false);
-        this.window.document.addEventListener('touchstart', (e) => this._onTouchStart(e), false);
-        this.window.document.addEventListener('mouseleave', (e) => this._onMouseUp(e), false);
-        this.window.document.addEventListener('touchcancel', (e) => this._onTouchEnd(e), false);
-        this.window.document.addEventListener('mouseup', (e) => this._onMouseUp(e), false);
-        this.window.document.addEventListener('touchend', (e) => this._onTouchEnd(e), false);
-        this.window.document.addEventListener('hashchange', (e) => this._onReset(e), false);
-        this.window.document.addEventListener('load', (e) => this._onReset(e), false);
+    }
+
+    init() {
+        const appDiv = this.window.document.getElementById('app');
+        appDiv.addEventListener('mousemove', (e) => this._onMouseMove(e), false);
+        appDiv.addEventListener('touchmove', (e) => this._onTouchMove(e), false);
+        appDiv.addEventListener('mousedown', (e) => this._onMouseDown(e), false);
+        appDiv.addEventListener('touchstart', (e) => this._onTouchStart(e), false);
+        appDiv.addEventListener('mouseleave', (e) => this._onMouseUp(e), false);
+        appDiv.addEventListener('touchcancel', (e) => this._onTouchEnd(e), false);
+        appDiv.addEventListener('mouseup', (e) => this._onMouseUp(e), false);
+        appDiv.addEventListener('touchend', (e) => this._onTouchEnd(e), false);
+        appDiv.addEventListener('hashchange', (e) => this._onReset(e), false);
+        appDiv.addEventListener('load', (e) => this._onReset(e), false);
     }
 
     /**
@@ -394,6 +398,20 @@ class LocalState {
      */
     get statsModal() {
         return this.document.getElementById('statsDialog');
+    }
+
+    /**
+     * @returns {HTMLDialogElement}
+     */
+    get mapModal() {
+        return this.document.getElementById('mapDialog');
+    }
+
+    /**
+     * @returns {HTMLImageElement}
+     */
+    get minimap() {
+        return this.document.getElementById('minimap');
     }
 }
 
@@ -676,6 +694,24 @@ async function fixStates(w, s) {
 
 /**
  * 
+ * @param {PointerEvent} evt 
+ * @param {Window} w 
+ * @param {LocalState} s 
+ */
+function handleMinimapNavigation(evt, w, s) {
+    const x = evt.pageX - s.mapModal.offsetLeft;
+    const y = evt.pageY - s.mapModal.offsetTop;
+
+    const xRatio = s.mapModal.clientWidth / s.gridMaxX;
+    const yRatio = s.mapModal.clientHeight / s.gridMaxY;
+
+    const xcoord = Math.ceil(x / xRatio);
+    const ycoord = Math.ceil(y / yRatio);
+    w.location.hash = `#${xcoord},${ycoord}`;
+}
+
+/**
+ * 
  * @param {Window} w 
  * @param {LocalState} s 
  * @returns 
@@ -735,27 +771,28 @@ async function startApplication(w, s) {
         await showControls(evt, w, s);
     });
 
+    w.document.getElementById('mapTrigger').addEventListener('click', async (evt) => {
+        await showMap(evt, w, s);
+    });
+
     // Modal-closing clicks
     w.document.addEventListener('click', (evt) => {
         const rect = evt.target.getBoundingClientRect();
 
-        if (s.statsModal.open && evt.target === s.statsModal) {
-            if (evt.clientX < rect.left ||
-                evt.clientX > rect.right ||
-                evt.clientY < rect.top ||
-                evt.clientY > rect.bottom) {
-                s.statsModal.close();
+        for (modal of [s.statsModal, s.controlsModal, s.mapModal]) {
+            if (modal.open && evt.target === modal) {
+                if (evt.clientX < rect.left ||
+                    evt.clientX > rect.right ||
+                    evt.clientY < rect.top ||
+                    evt.clientY > rect.bottom) {
+                    modal.close();
+                }
             }
         }
+    });
 
-        if (s.controlsModal.open && evt.target === s.controlsModal) {
-            if (evt.clientX < rect.left ||
-                evt.clientX > rect.right ||
-                evt.clientY < rect.top ||
-                evt.clientY > rect.bottom) {
-                s.controlsModal.close();
-            }
-        }
+    s.minimap.addEventListener('click', (evt) => {
+        handleMinimapNavigation(evt, w, s);
     });
 
     const centerDiv = await renderGridPoint(w, s, s.gridX, s.gridY);
@@ -829,6 +866,11 @@ async function showControls(evt, w, s) {
     s.controlsModal.showModal();
 }
 
+async function showMap(evt, w, s) {
+    s.minimap.src = "./minimap.png";
+    s.mapModal.showModal();
+}
+
 const root = window.getComputedStyle(document.documentElement);
 const gridMaxX = parseInt(root.getPropertyValue('--button-grid-count-x'));
 const gridMaxY = parseInt(root.getPropertyValue('--button-grid-count-y'));
@@ -836,10 +878,13 @@ const gridMaxY = parseInt(root.getPropertyValue('--button-grid-count-y'));
 window.state = window.state || new LocalState(window, gridMaxX, gridMaxY);
 window.state.panelTracker = new PanelTracker(window, (data) => onPanelStateChange(window, state, data));
 
-window.addEventListener('load', function () { startApplication(window, state); });
-window.addEventListener('hashchange', function () {
+function bootstrap() {
     startApplication(window, state);
-});
+    window.state.panelTracker.init();
+}
+
+window.addEventListener('load', bootstrap);
+window.addEventListener('hashchange', bootstrap);
 
 window.keys = window.keys || { ctrl: false };
 

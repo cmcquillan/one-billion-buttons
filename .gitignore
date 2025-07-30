@@ -1,2 +1,3 @@
 .terraform/
 deploy/terraform/terraform.tfstate*
+minimap.png
