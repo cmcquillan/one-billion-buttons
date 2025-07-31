@@ -12,14 +12,14 @@ packages:
           binary: false
           main: ""
           runtime: go:default
-          web: false
+          web: true
           webSecure: false
           parameters: {}
           environment: {}
           annotations: {}
           limits: {}
-          triggers:
-            - name: trigger-minimap
-              sourceType: schedule
-              sourceDetails: 
-                - cron: "*/10 * * * *"
+          # triggers:
+          #   - name: trigger-minimap
+          #     sourceType: schedule
+          #     sourceDetails: 
+          #       - cron: "*/10 * * * *"
