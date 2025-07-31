@@ -1,4 +1,4 @@
-package minimap
+package main
 
 import (
 	"context"
