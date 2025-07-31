@@ -1,6 +1,6 @@
 module github.com/cmcquillan/one-billion-buttons/minimap
 
-go 1.24.3
+go 1.23
 
 require github.com/cmcquillan/one-billion-buttons v0.6.0
 
