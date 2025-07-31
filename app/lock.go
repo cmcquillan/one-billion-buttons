@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/cmcquillan/one-billion-buttons/dblib"
 	"github.com/google/uuid"
 )
 
@@ -33,7 +34,7 @@ func (db *LockSql) GetConnectionString() string {
 func (db *LockSql) AcquireLock(lockType string, timeout time.Duration) (*LockValue, error) {
 	val := uuid.NewString()
 	lockVal := LockValue{}
-	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
+	err := dblib.OpenConnAndExec(db, func(dbc *sql.DB) error {
 		row := dbc.QueryRow(`
 			INSERT INTO sync_lock AS sl (id, lock_val, lock_time) 
 			VALUES ($1, $2, CURRENT_TIMESTAMP)
@@ -57,7 +58,7 @@ func (db *LockSql) AcquireLock(lockType string, timeout time.Duration) (*LockVal
 }
 
 func (db *LockSql) ReleaseLock(lockValue *LockValue) error {
-	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
+	err := dblib.OpenConnAndExec(db, func(dbc *sql.DB) error {
 		row := dbc.QueryRow(`
 			UPDATE sync_lock 
 			SET lock_val = NULL, lock_time = NULL 

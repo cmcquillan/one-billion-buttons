@@ -6,6 +6,7 @@ import (
 	"errors"
 	"log"
 
+	"github.com/cmcquillan/one-billion-buttons/dblib"
 	pq "github.com/lib/pq"
 )
 
@@ -43,7 +44,7 @@ func (db *ObbDbSql) GetConnectionString() string {
 }
 
 func (db *ObbDbSql) BeginMinimapStreaming(stream chan *MinimapItem, ctx context.Context) error {
-	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
+	err := dblib.OpenConnAndExec(db, func(dbc *sql.DB) error {
 
 		// Yep, query literally everything and stream to the application. Dirty reads are fine
 		rows, err := dbc.QueryContext(ctx, "set transaction isolation level read uncommitted; select x_coord, y_coord, map_value from button;")
@@ -79,7 +80,7 @@ func (db *ObbDbSql) BeginMinimapStreaming(stream chan *MinimapItem, ctx context.
 }
 
 func (db *ObbDbSql) RefreshStats() error {
-	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
+	err := dblib.OpenConnAndExec(db, func(dbc *sql.DB) error {
 		_, err := dbc.Exec("call update_button_stats()")
 		return err
 	})
@@ -88,7 +89,7 @@ func (db *ObbDbSql) RefreshStats() error {
 }
 
 func (db *ObbDbSql) AdjustStat(statKey string, delta int64) error {
-	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
+	err := dblib.OpenConnAndExec(db, func(dbc *sql.DB) error {
 		_, err := dbc.Exec("update button_stat set val = val + $1 where stat_key = $2", delta, statKey)
 		return err
 	})
@@ -97,7 +98,7 @@ func (db *ObbDbSql) AdjustStat(statKey string, delta int64) error {
 }
 
 func (db *ObbDbSql) LogButtonEvents(events []BackgroundButtonEvent) error {
-	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
+	err := dblib.OpenConnAndExec(db, func(dbc *sql.DB) error {
 		txn, err := dbc.Begin()
 
 		if err != nil {
@@ -137,7 +138,7 @@ func (db *ObbDbSql) GetButtonStats() ([]ButtonStat, error) {
 
 	var res *sql.Rows
 
-	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
+	err := dblib.OpenConnAndExec(db, func(dbc *sql.DB) error {
 		iRes, err := dbc.Query("select stat_key, stat_name, stat_desc, val, scale, \"order\" from button_stat")
 		res = iRes
 		return err
@@ -163,7 +164,7 @@ func (db *ObbDbSql) GetButtonStats() ([]ButtonStat, error) {
 func (db *ObbDbSql) GetPageButtonState(x int64, y int64) ([]byte, error) {
 	var rows *sql.Rows
 
-	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
+	err := dblib.OpenConnAndExec(db, func(dbc *sql.DB) error {
 		iRows, err := dbc.Query("select buttons from button where x_coord = $1 and y_coord = $2;", x, y)
 		rows = iRows
 		return err
@@ -183,7 +184,7 @@ func (db *ObbDbSql) GetPageButtonState(x int64, y int64) ([]byte, error) {
 }
 
 func (db *ObbDbSql) SetButtonState(x int64, y int64, index int64, rgb []byte) error {
-	err := OpenConnAndExec(db, func(dbc *sql.DB) error {
+	err := dblib.OpenConnAndExec(db, func(dbc *sql.DB) error {
 		stmt, err := dbc.Prepare("call set_button_color ($1, $2, $3, $4)")
 
 		if err != nil {
