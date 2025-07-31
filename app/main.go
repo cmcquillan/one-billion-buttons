@@ -34,16 +34,11 @@ func main() {
 		connStr: connStr,
 	}
 
-	locker := &LockSql{
-		connStr: connStr,
-	}
-
 	ctx, cancel := context.WithCancel(context.Background())
 
 	buttonEventChannel := make(chan BackgroundButtonEvent, 2000)
 	go BackgroundEventHandler(db, buttonEventChannel)
 	go BackgroundComputeStatistics(db, ctx)
-	go BackgroundCreateMinimaps(locker, db, ctx)
 
 	router := gin.Default()
 
