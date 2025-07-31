@@ -10,8 +10,8 @@ RUN go mod download
 RUN mkdir -p ./app
 RUN mkdir -p ./dblib
 
-COPY app/*.go ./app
-COPY dblib/*.go ./dblib
+COPY app/*.go ./app/
+COPY dblib/*.go ./dblib/
 
 WORKDIR /app/app
 
