@@ -1,6 +1,7 @@
 parameters: {}
 environment:
   PG_CONNECTION_STRING: "${PG_CONNECTION_STRING}"
+  OBB_FUNCTION_SECRET: "${OBB_FUNCTION_SECRET}"
 packages:
     - name: cronjobs
       shared: false
