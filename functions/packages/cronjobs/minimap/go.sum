@@ -1,0 +1,6 @@
+github.com/cmcquillan/one-billion-buttons v0.6.0 h1:0AnsrIfrkuuYLQ4Zs7ZPBhP7m8GUi+/v3wyvQ3gE3jg=
+github.com/cmcquillan/one-billion-buttons v0.6.0/go.mod h1:ER9olBN4k0YpwdnfJKbh0dqNEusUbXZ6mHaBROvs2E4=
+github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/lib/pq v1.10.9 h1:YXG7RB+JIjhP29X+OtkiDnYaXQwpS4JEWq7dtCCRUEw=
+github.com/lib/pq v1.10.9/go.mod h1:AlVN5x4E4T544tWzH6hKfbfQvm3HdbOxrmggDNAPY9o=
