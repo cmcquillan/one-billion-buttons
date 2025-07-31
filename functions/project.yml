@@ -1,0 +1,25 @@
+parameters: {}
+environment:
+  PG_CONNECTION_STRING: "${PG_CONNECTION_STRING}"
+packages:
+    - name: cronjobs
+      shared: false
+      environment: {}
+      parameters: {}
+      annotations: {}
+      functions:
+        - name: minimap
+          binary: false
+          main: ""
+          runtime: go:default
+          web: false
+          webSecure: false
+          parameters: {}
+          environment: {}
+          annotations: {}
+          limits: {}
+          triggers:
+            - name: trigger-minimap
+              sourceType: schedule
+              sourceDetails: 
+                - cron: "*/10 * * * *"
