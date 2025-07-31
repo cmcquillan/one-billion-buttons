@@ -1,13 +1,9 @@
 parameters: {}
-environment:
-  PG_CONNECTION_STRING: "${PG_CONNECTION_STRING}"
-  OBB_FUNCTION_SECRET: "${OBB_FUNCTION_SECRET}"
+environment: {}
 packages:
     - name: cronjobs
       shared: false
-      environment:
-        PG_CONNECTION_STRING: "${PG_CONNECTION_STRING}"
-        OBB_FUNCTION_SECRET: "${OBB_FUNCTION_SECRET}"
+      environment: {}
       parameters: {}
       annotations: {}
       functions:
@@ -18,7 +14,9 @@ packages:
           web: true
           webSecure: "${OOB_FUNCTION_SECRET}"
           parameters: {}
-          environment: {}
+          environment:
+            PG_CONNECTION_STRING: "${PG_CONNECTION_STRING}"
+            OBB_FUNCTION_SECRET: "${OBB_FUNCTION_SECRET}"
           annotations: {}
           limits: {}
           # triggers:
