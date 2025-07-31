@@ -7,7 +7,13 @@ COPY go.mod go.sum ./
 
 RUN go mod download
 
-COPY app/*.go ./
+RUN mkdir -p ./app
+RUN mkdir -p ./dblib
+
+COPY app/*.go ./app
+COPY dblib/*.go ./dblib
+
+WORKDIR /app/app
 
 RUN CGO_ENABLED=0 GOOS=linux go build -o application
 
