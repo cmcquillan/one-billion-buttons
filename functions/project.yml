@@ -18,8 +18,8 @@ packages:
             PG_CONNECTION_STRING: "${PG_CONNECTION_STRING}"
           annotations: {}
           limits: {}
-          triggers:
-            - name: trigger-minimap
-              sourceType: scheduled
-              sourceDetails: 
-                cron: "*/10 * * * *"
+          # triggers:
+          #   - name: trigger-minimap
+          #     sourceType: scheduled
+          #     sourceDetails: 
+          #       cron: "*/10 * * * *"
