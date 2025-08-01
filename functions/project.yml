@@ -15,6 +15,7 @@ packages:
           webSecure: "${OBB_FUNCTION_SECRET}"
           parameters: {}
           environment:
+            OBB_FUNCTION_SECRET: "${OBB_FUNCTION_SECRET}"
             PG_CONNECTION_STRING: "${PG_CONNECTION_STRING}"
           annotations: {}
           limits: {}
