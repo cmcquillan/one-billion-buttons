@@ -399,13 +399,13 @@ func min(a, b int) int {
 func TestGridPageGetButtonById(t *testing.T) {
 	// Create a test grid page at (1,1)
 	data := make([]byte, 300)
-	data[0] = 255  // First button red
+	data[0] = 255 // First button red
 	data[1] = 0
 	data[2] = 0
-	data[9] = 0    // Fourth button green
+	data[9] = 0 // Fourth button green
 	data[10] = 255
 	data[11] = 0
-	
+
 	page := CreateGridPage(1, 1, data)
 
 	tests := []struct {
@@ -513,10 +513,10 @@ func TestGridPageEncodeStates(t *testing.T) {
 			},
 			expected: func() []byte {
 				data := make([]byte, 300)
-				data[0] = 255  // First button red
+				data[0] = 255 // First button red
 				data[1] = 0
 				data[2] = 0
-				data[3] = 0    // Second button green
+				data[3] = 0 // Second button green
 				data[4] = 255
 				data[5] = 0
 				return data
