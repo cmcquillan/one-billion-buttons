@@ -3,3 +3,10 @@ deploy/terraform/terraform.tfstate*
 minimap.png
 functions/cronjobs/minimap/go.mod
 .env
+
+# Binary names
+app$
+app.exe
+makedb$
+makedb.exe
+dblib$

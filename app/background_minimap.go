@@ -82,17 +82,17 @@ func (db *MinimapDbSql) BeginMinimapStreaming(stream chan *MinimapItem, ctx cont
 
 const MINIMAP_LOCK_TYPE = "minimap_gen"
 
-func BackgroundWorkerMinimap(locker dblib.Lock, db MinimapDb, ctx context.Context) {
+func BackgroundWorkerMinimap(locker dblib.Lock, db MinimapDb, ctx context.Context, cfg *Config) {
 	log.Print("Background minimap maker started")
 
-	ticker := time.NewTicker(time.Second)
+	ticker := time.NewTicker(cfg.MinimapInitialInterval)
 
 tickerLoop:
 	for {
 		select {
 		case <-ticker.C:
-			if CreateMinimap(locker, db, ctx) {
-				ticker.Reset(time.Minute * 10)
+			if CreateMinimap(locker, db, ctx, cfg) {
+				ticker.Reset(cfg.MinimapIdleInterval)
 			}
 		case <-ctx.Done():
 			break tickerLoop
@@ -102,9 +102,9 @@ tickerLoop:
 	log.Print("Background minimap maker stopped")
 }
 
-func CreateMinimap(locker dblib.Lock, db MinimapDb, ctx context.Context) bool {
+func CreateMinimap(locker dblib.Lock, db MinimapDb, ctx context.Context, cfg *Config) bool {
 
-	lockVal, err := locker.AcquireLock(MINIMAP_LOCK_TYPE, time.Minute*10)
+	lockVal, err := locker.AcquireLock(MINIMAP_LOCK_TYPE, cfg.MinimapLockTimeout)
 
 	if err == dblib.ErrLockNotAcquired {
 		log.Printf("%s lock already acquired, deferring work", MINIMAP_LOCK_TYPE)
@@ -120,7 +120,7 @@ func CreateMinimap(locker dblib.Lock, db MinimapDb, ctx context.Context) bool {
 
 	log.Printf("lock %s acquired for %s", lockVal.Value, lockVal.Type)
 
-	mmChan := make(chan *MinimapItem, 10000)
+	mmChan := make(chan *MinimapItem, cfg.MinimapChannelSize)
 
 	x, y, err := db.GetImageDimensions()
 

@@ -19,11 +19,11 @@ type BackgroundButtonEvent struct {
 	Event ButtonEventType
 }
 
-func BackgroundEventHandler(db ObbDb, c <-chan BackgroundButtonEvent) {
+func BackgroundEventHandler(db ObbDb, c <-chan BackgroundButtonEvent, cfg *Config) {
 	log.Printf("Background event handler started")
 
-	ticker := time.NewTicker(time.Second * 2)
-	presses := make([]BackgroundButtonEvent, 0, 1000)
+	ticker := time.NewTicker(cfg.EventBatchInterval)
+	presses := make([]BackgroundButtonEvent, 0, cfg.EventBatchCapacity)
 
 	for {
 		closed := false
@@ -33,7 +33,7 @@ func BackgroundEventHandler(db ObbDb, c <-chan BackgroundButtonEvent) {
 			if len(presses) > 0 {
 				RecordButtonPress(db, presses)
 				log.Printf("processing %d button press events", len(presses))
-				presses = make([]BackgroundButtonEvent, 0, 1000)
+				presses = make([]BackgroundButtonEvent, 0, cfg.EventBatchCapacity)
 			}
 		case evt, open := <-c:
 			switch evt.Event {
@@ -56,7 +56,7 @@ func BackgroundEventHandler(db ObbDb, c <-chan BackgroundButtonEvent) {
 
 	RecordButtonPress(db, presses)
 
-	time.Sleep(time.Millisecond * 100)
+	time.Sleep(cfg.EventHandlerSleep)
 
 	log.Printf("Background event handler stopped")
 }
@@ -69,9 +69,9 @@ func RecordButtonPress(db ObbDb, events []BackgroundButtonEvent) {
 	}
 }
 
-func BackgroundComputeStatistics(db ObbDb, ctx context.Context) {
+func BackgroundComputeStatistics(db ObbDb, ctx context.Context, cfg *Config) {
 	log.Printf("Background statistics worker started")
-	ticker := time.NewTicker(time.Second * 120)
+	ticker := time.NewTicker(cfg.StatisticsInterval)
 	done := false
 	for !done {
 		select {

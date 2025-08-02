@@ -22,33 +22,31 @@ func main() {
 		os.Exit(1)
 	}
 
-	connStr := os.Getenv("PG_CONNECTION_STRING")
-
-	if len(connStr) == 0 {
-		log.Fatal("required environment: PG_CONNECTION_STRING")
-		os.Exit(1)
+	cfg, err := LoadConfig()
+	if err != nil {
+		log.Fatalf("failed to load configuration: %v", err)
 	}
 
 	log.Printf("running app from directory: %s", appPath)
 
 	db := &ObbDbSql{
-		connStr: connStr,
+		connStr: cfg.PgConnectionString,
 	}
 
 	locker := &dblib.LockSql{
-		ConnStr: connStr,
+		ConnStr: cfg.PgConnectionString,
 	}
 
 	mmDb := &MinimapDbSql{
-		connStr: connStr,
+		connStr: cfg.PgConnectionString,
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	buttonEventChannel := make(chan BackgroundButtonEvent, 2000)
-	go BackgroundEventHandler(db, buttonEventChannel)
-	go BackgroundComputeStatistics(db, ctx)
-	go BackgroundWorkerMinimap(locker, mmDb, ctx)
+	buttonEventChannel := make(chan BackgroundButtonEvent, cfg.ButtonEventChannelSize)
+	go BackgroundEventHandler(db, buttonEventChannel, cfg)
+	go BackgroundComputeStatistics(db, ctx, cfg)
+	go BackgroundWorkerMinimap(locker, mmDb, ctx, cfg)
 
 	router := gin.Default()
 
@@ -105,7 +103,7 @@ func main() {
 		}
 	}()
 
-	sigChan := make(chan os.Signal, 2)
+	sigChan := make(chan os.Signal, cfg.SignalChannelSize)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGINT)
 
