@@ -1,3 +1,7 @@
+resource "random_password" "obb_function_secret" {
+  length = 24
+}
+
 resource "digitalocean_app" "obb_webapp" {
   spec {
     name   = "obb-webapp"
@@ -7,6 +11,13 @@ resource "digitalocean_app" "obb_webapp" {
       key   = "PG_CONNECTION_STRING"
       value = "host=${digitalocean_database_cluster.primary_db.host} port=${digitalocean_database_cluster.primary_db.port} dbname=${digitalocean_database_db.primary_db.name} user=${digitalocean_database_cluster.primary_db.user} password=${digitalocean_database_cluster.primary_db.password}"
       scope = "RUN_TIME"
+      type  = "SECRET"
+    }
+
+    env {
+      key   = "OOB_FUNCTION_SECRET"
+      value = random_password.obb_function_secret.result
+      scope = "RUN_AND_BUILD_TIME"
       type  = "SECRET"
     }
 
@@ -44,17 +55,51 @@ resource "digitalocean_app" "obb_webapp" {
         branch = "main"
       }
     }
+
+    function {
+      name       = "cronjobs"
+      source_dir = "functions"
+
+      github {
+        repo   = "cmcquillan/one-billion-buttons"
+        branch = "main"
+      }
+    }
+
+    ingress {
+      rule {
+        component {
+          name = "api"
+        }
+        match {
+          path {
+            prefix = "/"
+          }
+        }
+      }
+      rule {
+        component {
+          name = "cronjobs"
+        }
+        match {
+          path {
+            prefix = "/__cron"
+          }
+        }
+      }
+    }
   }
 
   depends_on = [
     digitalocean_database_cluster.primary_db,
     digitalocean_database_db.primary_db,
     digitalocean_database_user.primary_db_user,
+    random_password.obb_function_secret,
   ]
 
   lifecycle {
     ignore_changes = [
-      spec[0].env
+      #spec[0].env[0]
     ]
     prevent_destroy = true
   }
