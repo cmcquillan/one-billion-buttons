@@ -2,3 +2,4 @@
 deploy/terraform/terraform.tfstate*
 minimap.png
 functions/cronjobs/minimap/go.mod
+.env

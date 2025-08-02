@@ -4,6 +4,9 @@
 	"name": "Go",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
 	"image": "mcr.microsoft.com/devcontainers/go:1-1.24-bookworm",
+	"runArgs": [
+		"--env-file", "${localWorkspaceFolder}/.devcontainer/.env"
+	],
 	"features": {
 		"ghcr.io/itsmechlark/features/redis-server:1": {
 			"version": "latest"
@@ -18,6 +21,9 @@
 			"version": "latest"
 		},
 		"ghcr.io/devcontainers/features/github-cli:1": {
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers/features/node:1": {
 			"version": "latest"
 		}
 	},
@@ -34,7 +40,16 @@
 				"github.vscode-github-actions"
 			]
 		}
-	}
+	},
+	"secrets": {
+		"DO_TOKEN": {
+			"description": "Digital Ocean API Token"
+		},
+		"CF_TOKEN": {
+			"description": "Cloudflare API Token"
+		}
+	},
+	"postCreateCommand": "./.devcontainer/setenv.sh"
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "go version",
 	// Configure tool-specific properties.

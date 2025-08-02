@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/cmcquillan/one-billion-buttons/dblib"
 	"github.com/gin-gonic/gin"
 )
 
@@ -34,11 +35,20 @@ func main() {
 		connStr: connStr,
 	}
 
+	locker := &dblib.LockSql{
+		ConnStr: connStr,
+	}
+
+	mmDb := &MinimapDbSql{
+		connStr: connStr,
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	buttonEventChannel := make(chan BackgroundButtonEvent, 2000)
 	go BackgroundEventHandler(db, buttonEventChannel)
 	go BackgroundComputeStatistics(db, ctx)
+	go BackgroundWorkerMinimap(locker, mmDb, ctx)
 
 	router := gin.Default()
 
