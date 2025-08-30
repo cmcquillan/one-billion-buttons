@@ -46,7 +46,11 @@ func main() {
 	buttonEventChannel := make(chan BackgroundButtonEvent, cfg.ButtonEventChannelSize)
 	go BackgroundEventHandler(db, buttonEventChannel, cfg)
 	go BackgroundComputeStatistics(db, ctx, cfg)
-	go BackgroundWorkerMinimap(locker, mmDb, ctx, cfg)
+
+	if cfg.RunMinimapInMain {
+		log.Print("Starting minimap generation in main instance")
+		go BackgroundWorkerMinimap(locker, mmDb, ctx, cfg)
+	}
 
 	router := gin.Default()
 
@@ -84,12 +88,20 @@ func main() {
 		c.File("./static/index.html")
 	})
 
+	router.GET("/minimap.png", func(c *gin.Context) {
+		if _, err := os.Stat("./static/minimap.png"); err == nil {
+			c.File("./static/minimap.png")
+			return
+		}
+
+		c.Status(http.StatusNotFound)
+	})
+
 	statsApi := StatsApi{Database: db}
 	router.GET("/api/stats", statsApi.HandleGetButtonStats)
 
 	router.StaticFile("/app.js", "./static/app.js")
 	router.StaticFile("/style.css", "./static/style.css")
-	router.StaticFile("/minimap.png", "./static/minimap.png")
 
 	server := &http.Server{
 		Addr:    ":8080",

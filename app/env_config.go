@@ -7,6 +7,9 @@ import (
 )
 
 type Config struct {
+	// Settings
+	RunMinimapInMain bool `envconfig:"RUN_MINIMAP_IN_MAIN" default:"false"`
+
 	// Database connection
 	PgConnectionString string `envconfig:"PG_CONNECTION_STRING" required:"true"`
 
