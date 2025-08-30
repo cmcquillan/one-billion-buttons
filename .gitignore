@@ -4,6 +4,7 @@ minimap.png
 functions/cronjobs/minimap/go.mod
 .env
 .claude/
+CLAUDE.md
 
 # Binary names
 app$
@@ -11,3 +12,4 @@ app.exe
 makedb$
 makedb.exe
 dblib$
+
