@@ -21,6 +21,13 @@ resource "digitalocean_app" "obb_webapp" {
       type  = "SECRET"
     }
 
+    env {
+      key   = "RUN_MINIMAP_IN_MAIN"
+      value = "true"
+      scope = "RUN_AND_BUILD_TIME"
+      type  = "GENERAL"
+    }
+
     service {
       name               = "api"
       instance_count     = 1
@@ -56,15 +63,15 @@ resource "digitalocean_app" "obb_webapp" {
       }
     }
 
-    function {
-      name       = "cronjobs"
-      source_dir = "functions"
+    # function {
+    #   name       = "cronjobs"
+    #   source_dir = "functions"
 
-      github {
-        repo   = "cmcquillan/one-billion-buttons"
-        branch = "main"
-      }
-    }
+    #   github {
+    #     repo   = "cmcquillan/one-billion-buttons"
+    #     branch = "main"
+    #   }
+    # }
 
     ingress {
       rule {
@@ -74,16 +81,6 @@ resource "digitalocean_app" "obb_webapp" {
         match {
           path {
             prefix = "/"
-          }
-        }
-      }
-      rule {
-        component {
-          name = "cronjobs"
-        }
-        match {
-          path {
-            prefix = "/__cron"
           }
         }
       }
