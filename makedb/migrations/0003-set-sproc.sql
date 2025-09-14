@@ -42,8 +42,8 @@ AS $BODY$
 DECLARE
     ixs INTEGER;
     rV INTEGER := get_byte(rgbVal, 0);
-    bV INTEGER := get_byte(rgbVal, 1);
     gV INTEGER := get_byte(rgbVal, 2);
+    bV INTEGER := get_byte(rgbVal, 1);
 BEGIN
 
 ixs := ix * 3;

@@ -270,6 +270,12 @@ func TestHexToBytes(t *testing.T) {
 			expected:  []byte{255, 170, 187},
 			expectErr: false,
 		},
+		{
+			name:      "2025-09-13 bug",
+			hex:       "#baa813",
+			expected:  []byte{186, 168, 19},
+			expectErr: false,
+		},
 	}
 
 	for _, test := range tests {
