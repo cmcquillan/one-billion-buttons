@@ -150,7 +150,7 @@ func (db *ObbDbSql) SetButtonState(x int64, y int64, index int64, rgb []byte) er
 
 		defer stmt.Close()
 
-		log.Printf("setting (%d, %d, %d) to %s", x, y, index, rgb)
+		log.Printf("setting (%d, %d, %d) to %s", x, y, index, ToHex(rgb))
 		_, err2 := stmt.Exec(x, y, index, rgb)
 		return err2
 	})

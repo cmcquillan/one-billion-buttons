@@ -75,7 +75,11 @@ func (s *ButtonState) fromHex(hex string) error {
 }
 
 func (s *ButtonState) ToHex() string {
-	return hex.EncodeToString([]byte{s.r, s.g, s.b})
+	return ToHex([]byte{s.r, s.g, s.b})
+}
+
+func ToHex(rgb []byte) string {
+	return hex.EncodeToString(rgb)
 }
 
 func (s *ButtonState) IsEmpty() bool {
