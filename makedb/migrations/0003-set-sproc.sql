@@ -1,6 +1,9 @@
 DO $$
 BEGIN
 
+DROP PROCEDURE IF EXISTS set_button_color;
+DROP FUNCTION IF EXISTS get_minimap_color;
+
 CREATE OR REPLACE FUNCTION get_minimap_color(bytes fixed_bytea) 
 RETURNS bytea
 AS $BODY$
