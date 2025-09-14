@@ -106,13 +106,13 @@ func (api *ButtonApi) HandlePostButton(c *gin.Context) {
 
 	if HexCodesAreEquivalent(button.Hex, dto.Hex) {
 		res = http.StatusOK
-	}
 
-	api.EventChannel <- BackgroundButtonEvent{
-		X:     uint64(xCoord),
-		Y:     uint64(yCoord),
-		ID:    dto.ID,
-		Event: ButtonEventTypePress,
+		api.EventChannel <- BackgroundButtonEvent{
+			X:     uint64(xCoord),
+			Y:     uint64(yCoord),
+			ID:    dto.ID,
+			Event: ButtonEventTypePress,
+		}
 	}
 
 	c.JSON(res, bDto)
